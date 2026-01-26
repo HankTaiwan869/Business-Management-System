@@ -1,4 +1,4 @@
-from nicegui import ui, APIRouter
+from nicegui import ui, APIRouter, app
 from . import cycle_customer, cycle_product, cycle_supply
 
 router = APIRouter(prefix="/cycle")
@@ -6,11 +6,12 @@ router = APIRouter(prefix="/cycle")
 
 @router.page("/")
 def cycle_page():
-    ui.label("This is cycle page")
+    cycle_id = app.storage.general.get("cycle_id")
+    ui.label(f"This is cycle page for cycle {cycle_id}")
     ui.link("Go back to Home", "/")
     ui.link("Product", "/cycle/product")
     ui.link("Customer", "/cycle/customer")
-    ui.link("suuply", "/cycle/supply")
+    ui.link("Supply", "/cycle/supply")
 
 
 @router.page("/product")

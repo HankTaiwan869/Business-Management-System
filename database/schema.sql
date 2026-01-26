@@ -42,7 +42,7 @@ CREATE TABLE customer_orders (
 CREATE TABLE product_prices (
     cycle_id INTEGER NOT NULL,
     product_id INTEGER NOT NULL,
-    price REAL NOT NULL,
+    sell_price REAL NOT NULL,
     created_at_timestamp TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (cycle_id, product_id),
     FOREIGN KEY (cycle_id) REFERENCES cycles(id),
@@ -54,10 +54,17 @@ CREATE TABLE supply_orders (
     cycle_id INTEGER NOT NULL,
     supplier_id INTEGER NOT NULL,
     product_id INTEGER NOT NULL,
+    buy_price REAL NOT NULL,
     quantity INTEGER NOT NULL,
     created_at_timestamp TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (cycle_id, supplier_id, product_id),
     FOREIGN KEY (cycle_id) REFERENCES cycles(id),
     FOREIGN KEY (supplier_id) REFERENCES suppliers(id),
     FOREIGN KEY (product_id) REFERENCES products(id)
+);
+
+-- Create system settings table
+CREATE TABLE settings (
+    is_in_cycle INTEGER PRIMARY KEY,
+    cycle_id INTEGER
 );

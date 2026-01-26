@@ -1,11 +1,18 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import List
 from sqlalchemy import ForeignKey, Text, Integer, REAL, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
 class Base(DeclarativeBase):
     pass
+
+
+class Settings(Base):
+    __tablename__ = "settings"
+
+    is_in_cycle: Mapped[bool] = mapped_column(Integer, primary_key=True)
+    cycle_id: Mapped[int | None] = mapped_column(Integer)
 
 
 class Customer(Base):
@@ -24,7 +31,7 @@ class Cycle(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     start_date: Mapped[str] = mapped_column(Text, nullable=False)
-    end_date: Mapped[Optional[str]] = mapped_column(Text)
+    end_date: Mapped[str | None] = mapped_column(Text)
 
     # Relationships
     customer_orders: Mapped[List["CustomerOrder"]] = relationship(
@@ -83,7 +90,7 @@ class ProductPrice(Base):
 
     cycle_id: Mapped[int] = mapped_column(ForeignKey("cycles.id"), primary_key=True)
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id"), primary_key=True)
-    price: Mapped[float] = mapped_column(REAL, nullable=False)
+    sell_price: Mapped[float] = mapped_column(REAL, nullable=False)
     created_at_timestamp: Mapped[str] = mapped_column(
         Text, default=lambda: datetime.now().isoformat()
     )
@@ -101,6 +108,7 @@ class SupplyOrder(Base):
         ForeignKey("suppliers.id"), primary_key=True
     )
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id"), primary_key=True)
+    buy_price: Mapped[float] = mapped_column(REAL, nullable=False)
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at_timestamp: Mapped[str] = mapped_column(
         Text, default=lambda: datetime.now().isoformat()
