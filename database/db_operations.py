@@ -9,7 +9,7 @@ from .models import (
     SupplyOrder,
     Settings,
 )
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 import pandas as pd
 from datetime import datetime
@@ -104,3 +104,36 @@ def get_suppliers() -> pd.DataFrame:
     with SessionLocal() as session:
         df = pd.read_sql_query("SELECT * FROM suppliers", session.connection())
     return df
+
+
+def get_product_prices(cycle_id: int):
+    with SessionLocal() as session:
+        data = (
+            session.query(ProductPrice).filter(ProductPrice.cycle_id == cycle_id).all()
+        )
+
+    return data
+
+
+def update_product_price(cycle_id: int, product_id: int, new_price: float):
+    with SessionLocal() as session:
+        product_price = (
+            session.query(ProductPrice)
+            .filter(
+                ProductPrice.cycle_id == cycle_id,
+                ProductPrice.product_id == product_id,
+            )
+            .one_or_none()
+        )
+        if product_price:
+            product_price.sell_price = new_price
+        else:
+            product_price = ProductPrice(
+                cycle_id=cycle_id, product_id=product_id, sell_price=new_price
+            )
+            session.add(product_price)
+        session.commit()
+
+
+if __name__ == "__main__":
+    get_product_prices(1)

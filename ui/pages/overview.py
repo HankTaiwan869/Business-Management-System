@@ -17,6 +17,7 @@ def submit_customer(name, discount):
         ui.notify(f"Customer '{name.value}' added successfully.", color="green")
         name.value = ""
         discount.value = 0.0
+        customer_table.refresh()
     except Exception as e:
         ui.notify(f"Error adding customer: {e}", color="red")
 
@@ -28,6 +29,7 @@ def submit_product(product_name_input):
             f"Product '{product_name_input.value}' added successfully.", color="green"
         )
         product_name_input.value = ""
+        product_table.refresh()
     except Exception as e:
         ui.notify(f"Error adding product: {e}", color="red")
 
@@ -39,59 +41,107 @@ def submit_supplier(supplier_name_input):
             f"Supplier '{supplier_name_input.value}' added successfully.", color="green"
         )
         supplier_name_input.value = ""
+        supplier_table.refresh()
     except Exception as e:
         ui.notify(f"Error adding supplier: {e}", color="red")
+
+
+@ui.refreshable
+def customer_table():
+    ui.table.from_pandas(get_customers()).classes("w-full mx-auto").props("dense=false")
+
+
+@ui.refreshable
+def product_table():
+    ui.table.from_pandas(get_products()).classes("w-full mx-auto").props("dense=false")
+
+
+@ui.refreshable
+def supplier_table():
+    ui.table.from_pandas(get_suppliers()).classes("w-full mx-auto").props("dense=false")
 
 
 @router.page("/")
 def overview_page():
     ui.query("body").classes("bg-gray-100")
 
-    ui.label("Overview").classes("text-h3 font-bold q-mb-lg")
-    with ui.column().classes("w-full max-w-4xl mx-auto p-8"):
-        with ui.tabs().classes("justify-left") as tabs:
-            ui.tab("add_customer", "Customer", icon="person")
-            ui.tab("add_product", "Product", icon="inventory_2")
-            ui.tab("add_supplier", "Supplier", icon="local_shipping")
-
-        ui.button("Back to Home", on_click=lambda: ui.navigate.to("/")).props(
-            "color=secondary"
-        ).classes("self-end q-mb-md")
-
-        with ui.tab_panels(tabs, value="add_customer").classes("w-full"):
-            with ui.tab_panel("add_customer").classes("q-pa-md"):
-                with ui.column().classes("gap-4 w-full"):
-                    name_input = ui.input(
-                        "Customer Name",
-                    ).classes("w-full")
-                    discount_input = ui.number("Discount", value=0.0, min=0.0).classes(
-                        "w-full"
+    with ui.column().classes("w-full max-w-4xl mx-auto p-8 gap-6"):
+        # Header card
+        with ui.card().classes("w-full"):
+            with ui.row().classes("items-center justify-between w-full"):
+                with ui.column().classes("gap-1"):
+                    ui.label("Database Overview").classes(
+                        "text-h4 font-bold text-primary"
                     )
-                    ui.button(
-                        "Add New Customer",
-                        on_click=lambda: submit_customer(name_input, discount_input),
-                    ).props("size=lg")
-                    ui.table.from_pandas(get_customers()).classes(
-                        "w-full mx-auto text-xl"
-                    ).props("dense=false")
-            with ui.tab_panel("add_product").classes("q-pa-md"):
-                with ui.column().classes("gap-4 w-full"):
-                    product_name_input = ui.input("Product Name").classes("w-full")
-                    ui.button(
-                        "Add New Product",
-                        on_click=lambda: submit_product(product_name_input),
-                    ).props("color=primary size=lg")
-                    ui.table.from_pandas(get_products()).classes(
-                        "w-full mx-auto text-xl"
-                    ).props("dense=false")
+                    ui.label("Manage customers, products, and suppliers").classes(
+                        "text-subtitle1 text-gray-600"
+                    )
 
-            with ui.tab_panel("add_supplier").classes("q-pa-md"):
-                with ui.column().classes("gap-4 w-full"):
-                    supplier_name_input = ui.input("Supplier Name").classes("w-full")
-                    ui.button(
-                        "Add New Supplier",
-                        on_click=lambda: submit_supplier(supplier_name_input),
-                    ).props("color=primary size=lg")
-                    ui.table.from_pandas(get_suppliers()).classes(
-                        "w-full mx-auto text-xl"
-                    ).props("dense=false")
+                ui.button(
+                    "Back to Home", icon="home", on_click=lambda: ui.navigate.to("/")
+                ).props("flat color=secondary")
+
+        # Tabs card
+        with ui.card().classes("w-full"):
+            with ui.tabs().classes("w-full") as tabs:
+                ui.tab("add_customer", "Customer", icon="person")
+                ui.tab("add_product", "Product", icon="inventory_2")
+                ui.tab("add_supplier", "Supplier", icon="local_shipping")
+
+            ui.separator()
+
+            with ui.tab_panels(tabs, value="add_customer").classes("w-full"):
+                with ui.tab_panel("add_customer"):
+                    with ui.column().classes("gap-4 w-full p-4"):
+                        ui.label("Add New Customer").classes("text-h6 font-medium")
+                        name_input = ui.input("Customer Name").classes("w-full")
+                        discount_input = ui.number(
+                            "Discount", value=0.0, min=0.0
+                        ).classes("w-full")
+                        ui.button(
+                            "Add Customer",
+                            icon="add",
+                            on_click=lambda: submit_customer(
+                                name_input, discount_input
+                            ),
+                        ).props("color=primary")
+
+                        ui.separator().classes("q-my-md")
+                        ui.label("Current Customers").classes(
+                            "text-subtitle1 font-medium q-mb-sm"
+                        )
+                        customer_table()
+
+                with ui.tab_panel("add_product"):
+                    with ui.column().classes("gap-4 w-full p-4"):
+                        ui.label("Add New Product").classes("text-h6 font-medium")
+                        product_name_input = ui.input("Product Name").classes("w-full")
+                        ui.button(
+                            "Add Product",
+                            icon="add",
+                            on_click=lambda: submit_product(product_name_input),
+                        ).props("color=primary")
+
+                        ui.separator().classes("q-my-md")
+                        ui.label("Current Products").classes(
+                            "text-subtitle1 font-medium q-mb-sm"
+                        )
+                        product_table()
+
+                with ui.tab_panel("add_supplier"):
+                    with ui.column().classes("gap-4 w-full p-4"):
+                        ui.label("Add New Supplier").classes("text-h6 font-medium")
+                        supplier_name_input = ui.input("Supplier Name").classes(
+                            "w-full"
+                        )
+                        ui.button(
+                            "Add Supplier",
+                            icon="add",
+                            on_click=lambda: submit_supplier(supplier_name_input),
+                        ).props("color=primary")
+
+                        ui.separator().classes("q-my-md")
+                        ui.label("Current Suppliers").classes(
+                            "text-subtitle1 font-medium q-mb-sm"
+                        )
+                        supplier_table()
