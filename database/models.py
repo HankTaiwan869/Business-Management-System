@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import List
 from sqlalchemy import ForeignKey, Text, Integer, REAL, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from dataclasses import dataclass
 
 
 class Base(DeclarativeBase):
@@ -73,7 +74,7 @@ class CustomerOrder(Base):
         ForeignKey("customers.id"), primary_key=True
     )
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id"), primary_key=True)
-    quantity: Mapped[int] = mapped_column(Integer, nullable=False)
+    quantity: Mapped[float] = mapped_column(REAL, nullable=False)
     actual_price: Mapped[float] = mapped_column(REAL, nullable=False)
     created_at_timestamp: Mapped[str] = mapped_column(
         Text, default=lambda: datetime.now().isoformat()
@@ -118,6 +119,13 @@ class SupplyOrder(Base):
     cycle: Mapped["Cycle"] = relationship(back_populates="supply_orders")
     supplier: Mapped["Supplier"] = relationship(back_populates="supply_orders")
     product: Mapped["Product"] = relationship(back_populates="supply_orders")
+
+
+# for db_operations.get_orders_by_customer_and_product
+@dataclass
+class Order:
+    quantity: float = 0
+    price: float = 0
 
 
 if __name__ == "__main__":

@@ -10,17 +10,14 @@ cycle_id = app.storage.general.get("cycle_id")
 
 def update_price_dialog(product_name):
     with ui.dialog() as dialog, ui.card():
-        products = get_products()
-        product_id = int(products[products["name"] == product_name].id.values[0])
-
-        ui.label(f"Update price for {product_name}").classes("text-h6")
+        ui.label("Update price").classes("text-h6")
         price_input = ui.number(label="New Price", value=0, min=0, step=0.01)
 
         def update_price():
             try:
                 new_price = float(price_input.value)
                 update_product_price(
-                    cycle_id=cycle_id, product_id=product_id, new_price=new_price
+                    cycle_id=cycle_id, product_name=product_name, new_price=new_price
                 )
                 ui.notify(f"Price updated successfully to {new_price}", color="green")
                 product_price_table.refresh()
@@ -39,30 +36,29 @@ def update_price_dialog(product_name):
 def product_price_table():
     # table definition
     columns = [
+        {"name": "product_id", "label": "ID", "field": "product_id"},
         {"name": "product", "label": "Product", "field": "product"},
         {"name": "price", "label": "Price", "field": "price"},
         {"name": "update", "label": "Update", "align": "center"},
     ]
-    product_prices = get_product_prices(cycle_id)
-    products = get_products()  # Pandas dataframe of products
-    rows = []
-    # print(product_prices[0].product_id)
-    # print(type(products[products["name"] == "A"]["id"][0]))
 
-    for product in products.to_dict(orient="records"):
-        product_name = product["name"]
+    product_prices = get_product_prices(cycle_id)  # List of ProductPrice Objects
+    products = get_products()  # List of Product objects
+    rows = []
+    for product in products:
+        product_name = product.name
         price = 0
         for item in product_prices:
-            if item.product_id == product["id"]:
+            if item.product_id == product.id:
                 price = item.sell_price
                 break
-        rows.append({"product": product_name, "price": price})
+        rows.append({"product_id": product.id, "product": product_name, "price": price})
 
-    table = ui.table(columns=columns, rows=rows, row_key="product")
+    table = ui.table(columns=columns, rows=rows, row_key="product_id").classes("w-full")
     # table buttons definition
     with table.add_slot("body-cell-update"):
         with table.cell("update"):
-            ui.button("update").props("flat").on(
+            ui.button("update").props("flat color=primary").on(
                 "click",
                 js_handler="() => emit(props.row.product)",
                 handler=lambda e: update_price_dialog(e.args),
@@ -70,4 +66,49 @@ def product_price_table():
 
 
 def content():
-    product_price_table()
+    ui.query("body").classes("bg-gray-100")
+
+    with ui.row().classes("w-full gap-32 p-8"):
+        # Left sidebar with navigation buttons
+        with ui.column().classes("gap-4"):
+            ui.button(
+                icon="home",
+                on_click=lambda: ui.navigate.to("/"),
+            ).props("round color=secondary").tooltip("Home")
+
+            ui.button(
+                icon="person",
+                on_click=lambda: ui.navigate.to("/cycle/customer"),
+            ).props("round color=green").tooltip("Customer")
+
+            ui.button(
+                icon="local_shipping",
+                on_click=lambda: ui.navigate.to("/cycle/supply"),
+            ).props("round color=orange").tooltip("Supply")
+
+        # Main content area
+        with ui.column().classes("flex-1 max-w-4xl gap-6"):
+            # Header section
+            with ui.card().classes("w-full"):
+                with ui.row().classes("items-center justify-between w-full"):
+                    with ui.column().classes("gap-1"):
+                        ui.label("Product Management").classes(
+                            "text-h4 font-bold text-primary"
+                        )
+                        ui.label(f"Cycle ID: {cycle_id}").classes(
+                            "text-subtitle1 text-gray-600"
+                        )
+
+                    ui.button(
+                        "Back to Cycle",
+                        icon="arrow_back",
+                        on_click=lambda: ui.navigate.to("/cycle"),
+                    ).props("flat color=secondary")
+
+            # Product prices section
+            ui.label("Product Prices").classes(
+                "text-h6 font-medium text-gray-700 q-mt-md"
+            )
+
+            with ui.card().classes("w-full"):
+                product_price_table()

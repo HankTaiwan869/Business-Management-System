@@ -13,6 +13,9 @@ router = APIRouter(prefix="/overview")
 
 def submit_customer(name, discount):
     try:
+        if name.value == "":
+            ui.notify("Name cannot be empty. Please try again.", color="red")
+            return
         add_customer(name.value, discount.value)
         ui.notify(f"Customer '{name.value}' added successfully.", color="green")
         name.value = ""
@@ -24,6 +27,9 @@ def submit_customer(name, discount):
 
 def submit_product(product_name_input):
     try:
+        if product_name_input.value == "":
+            ui.notify("Name cannot be empty. Please try again.", color="red")
+            return
         add_product(product_name_input.value)
         ui.notify(
             f"Product '{product_name_input.value}' added successfully.", color="green"
@@ -36,6 +42,9 @@ def submit_product(product_name_input):
 
 def submit_supplier(supplier_name_input):
     try:
+        if supplier_name_input.value == "":
+            ui.notify("Name cannot be empty. Please try again.", color="red")
+            return
         add_supplier(supplier_name_input.value)
         ui.notify(
             f"Supplier '{supplier_name_input.value}' added successfully.", color="green"
@@ -48,17 +57,45 @@ def submit_supplier(supplier_name_input):
 
 @ui.refreshable
 def customer_table():
-    ui.table.from_pandas(get_customers()).classes("w-full mx-auto").props("dense=false")
+    columns = [
+        {"name": "id", "label": "ID", "field": "id"},
+        {"name": "name", "label": "Name", "field": "name"},
+        {"discount": "discount", "label": "Discount", "field": "discount"},
+    ]
+    rows = []
+    for row in get_customers():
+        rows.append({"id": row.id, "name": row.name, "discount": row.discount})
+    ui.table(columns=columns, rows=rows, row_key="id").classes("w-full mx-auto").props(
+        "dense=false"
+    )
 
 
 @ui.refreshable
 def product_table():
-    ui.table.from_pandas(get_products()).classes("w-full mx-auto").props("dense=false")
+    columns = [
+        {"name": "id", "label": "ID", "field": "id"},
+        {"name": "name", "label": "Name", "field": "name"},
+    ]
+    rows = []
+    for row in get_products():
+        rows.append({"id": row.id, "name": row.name})
+    ui.table(columns=columns, rows=rows, row_key="id").classes("w-full mx-auto").props(
+        "dense=false"
+    )
 
 
 @ui.refreshable
 def supplier_table():
-    ui.table.from_pandas(get_suppliers()).classes("w-full mx-auto").props("dense=false")
+    columns = [
+        {"name": "id", "label": "ID", "field": "id"},
+        {"name": "name", "label": "Name", "field": "name"},
+    ]
+    rows = []
+    for row in get_suppliers():
+        rows.append({"id": row.id, "name": row.name})
+    ui.table(columns=columns, rows=rows, row_key="id").classes("w-full mx-auto").props(
+        "dense=false"
+    )
 
 
 @router.page("/")
