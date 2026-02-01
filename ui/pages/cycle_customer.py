@@ -7,6 +7,7 @@ from database.db_operations import (
     update_order,
 )
 from typing import Sequence
+import utils.validators as validators
 
 cycle_id = app.storage.general.get("cycle_id")
 
@@ -23,9 +24,11 @@ def calculate_total_price(
     return total
 
 
-def ui_update_order(cycle_id: int, customer_id: int, product_id: int, quantity: float):
+def ui_update_order(
+    cycle_id: int, customer_id: int, product_id: int, quantity: float
+) -> None:
     try:
-        if quantity <= 0:
+        if not validators.is_valid_number(quantity):
             ui.notify("Quantity has to be positive", type="negative")
             return
         update_order(cycle_id, customer_id, product_id, quantity)

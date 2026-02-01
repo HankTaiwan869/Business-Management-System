@@ -7,52 +7,59 @@ from database.db_operations import (
     get_products,
     get_suppliers,
 )
+import utils.validators as validator
 
 router = APIRouter(prefix="/overview")
 
 
 def submit_customer(name, discount):
     try:
-        if name.value == "":
-            ui.notify("Name cannot be empty. Please try again.", color="red")
+        if not validator.is_valid_name(name.value):
+            ui.notify("Name cannot be empty. Please try again.", type="negative")
             return
-        add_customer(name.value, discount.value)
-        ui.notify(f"Customer '{name.value}' added successfully.", color="green")
+        if not validator.is_valid_number(discount.value):
+            ui.notify("Discount should be positive. Please try again.", type="negative")
+        add_customer(name.value.strip(), discount.value)
+        ui.notify(
+            f"Customer '{name.value.strip()}' added successfully.", type="positive"
+        )
         name.value = ""
         discount.value = 0.0
         customer_table.refresh()
     except Exception as e:
-        ui.notify(f"Error adding customer: {e}", color="red")
+        ui.notify(f"Error adding customer: {e}", type="negative")
 
 
 def submit_product(product_name_input):
     try:
-        if product_name_input.value == "":
-            ui.notify("Name cannot be empty. Please try again.", color="red")
+        if not validator.is_valid_name(product_name_input.value):
+            ui.notify("Name cannot be empty. Please try again.", type="negative")
             return
-        add_product(product_name_input.value)
+        add_product(product_name_input.value.strip())
         ui.notify(
-            f"Product '{product_name_input.value}' added successfully.", color="green"
+            f"Product '{product_name_input.value.strip()}' added successfully.",
+            type="positive",
         )
         product_name_input.value = ""
         product_table.refresh()
     except Exception as e:
-        ui.notify(f"Error adding product: {e}", color="red")
+        ui.notify(f"Error adding product: {e}", type="negative")
 
 
 def submit_supplier(supplier_name_input):
     try:
-        if supplier_name_input.value == "":
-            ui.notify("Name cannot be empty. Please try again.", color="red")
+        if not validator.is_valid_name(supplier_name_input.value):
+            ui.notify("Name cannot be empty. Please try again.", type="negative")
             return
-        add_supplier(supplier_name_input.value)
+        add_supplier(supplier_name_input.value.strip())
         ui.notify(
-            f"Supplier '{supplier_name_input.value}' added successfully.", color="green"
+            f"Supplier '{supplier_name_input.value.strip()}' added successfully.",
+            type="positive",
         )
         supplier_name_input.value = ""
         supplier_table.refresh()
     except Exception as e:
-        ui.notify(f"Error adding supplier: {e}", color="red")
+        ui.notify(f"Error adding supplier: {e}", type="negative")
 
 
 @ui.refreshable

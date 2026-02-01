@@ -4,6 +4,7 @@ from database.db_operations import (
     get_products,
     update_product_price,
 )
+import utils.validators as validators
 
 cycle_id = app.storage.general.get("cycle_id")
 
@@ -16,14 +17,18 @@ def update_price_dialog(product_name):
         def update_price():
             try:
                 new_price = float(price_input.value)
+                if not validators.is_valid_number(new_price):
+                    ui.notify(
+                        "Price has to be positive. Please try again.", type="negative"
+                    )
                 update_product_price(
                     cycle_id=cycle_id, product_name=product_name, new_price=new_price
                 )
-                ui.notify(f"Price updated successfully to {new_price}", color="green")
+                ui.notify(f"Price updated successfully to {new_price}", type="positive")
                 product_price_table.refresh()
                 dialog.close()
             except Exception as e:
-                ui.notify(f"Error updating price: {e}", color="red")
+                ui.notify(f"Error updating price: {e}", type="negative")
 
         with ui.row().classes("gap-2 q-mt-md"):
             ui.button("Cancel", on_click=dialog.close).props("flat")
