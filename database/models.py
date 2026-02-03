@@ -75,7 +75,6 @@ class CustomerOrder(Base):
     )
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id"), primary_key=True)
     quantity: Mapped[float] = mapped_column(REAL, nullable=False)
-    actual_price: Mapped[float] = mapped_column(REAL, nullable=False)
     created_at_timestamp: Mapped[str] = mapped_column(
         Text, default=lambda: datetime.now().isoformat()
     )
@@ -110,7 +109,7 @@ class SupplyOrder(Base):
     )
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id"), primary_key=True)
     buy_price: Mapped[float] = mapped_column(REAL, nullable=False)
-    quantity: Mapped[int] = mapped_column(Integer, nullable=False)
+    quantity: Mapped[float] = mapped_column(REAL, nullable=False)
     created_at_timestamp: Mapped[str] = mapped_column(
         Text, default=lambda: datetime.now().isoformat()
     )
@@ -121,9 +120,8 @@ class SupplyOrder(Base):
     product: Mapped["Product"] = relationship(back_populates="supply_orders")
 
 
-# for db_operations.get_orders_by_customer_and_product
 @dataclass
-class Order:
+class Supply_quantity_and_price:
     quantity: float = 0
     price: float = 0
 

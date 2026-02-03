@@ -1,65 +1,136 @@
-# supply.py
-from nicegui import ui, app
+from nicegui import ui
+from database.db_operations import (
+    get_products,
+    get_suppliers,
+    get_orders_by_supplier_and_product,
+    get_orders_by_suppliers,
+    get_total_customer_order_quantity_by_product,
+    get_total_supply_order_quantity_by_product,
+    update_supplier_order,
+)
+import utils.validators as validator
+from utils.helpers import get_current_cycle_id
+from ui.components.cycle_components import (
+    create_cycle_navigation_buttons,
+    create_header,
+)
 
-cycle_id = app.storage.general.get("cycle_id")
+
+def calculate_total_price(supplier_id: int) -> float:
+    orders = get_orders_by_suppliers(
+        cycle_id=get_current_cycle_id(), supplier_id=supplier_id
+    )
+    total = 0
+    for order in orders:
+        total += order.buy_price * order.quantity
+    return total
 
 
-@ui.refreshable
-def supply_table():
-    # Table definition - to be implemented
-    columns = [
-        {"name": "supplier", "label": "Supplier Name", "field": "supplier"},
-        {"name": "product", "label": "Product", "field": "product"},
-        {"name": "quantity", "label": "Quantity", "field": "quantity"},
-        {"name": "actions", "label": "Actions", "align": "center"},
-    ]
-    rows = []
+def ui_update_supply_order(
+    cycle_id: int, supplier_id: int, product_id: int, quantity: float, price: float
+) -> None:
+    try:
+        if not validator.is_valid_number(quantity) or not validator.is_valid_number(
+            price
+        ):
+            ui.notify("Quantity/Price have to be positive.", type="negative")
+            return
+        update_supplier_order(cycle_id, supplier_id, product_id, quantity, price)
+        ui.notify("Successful!", type="positive")
+    except Exception:
+        ui.notify(f"Failed because of {Exception}", type="negative")
 
-    table = ui.table(columns=columns, rows=rows, row_key="supplier").classes("w-full")
+
+# dynamically create supplier order cards
+def create_supplier_cards():
+    suppliers = get_suppliers()
+    products = get_products()
+    # dictionary mapping from tuple (supplier id, product id) to namedtuple (quantity, buy price)
+    orders = get_orders_by_supplier_and_product(get_current_cycle_id())
+
+    with ui.grid(columns=3):
+        for supplier in suppliers:
+            with ui.card():
+                ui.label(supplier.name).classes("text-h6 font-medium")
+                with ui.column().classes("gap-2"):
+                    for product in products:
+                        with ui.column().classes("gap-1"):
+                            ui.label(product.name).classes("text-subtitle2 font-medium")
+                            with ui.row().classes("gap-2"):
+                                quantity = ui.number(
+                                    "Quantity",
+                                    min=0.0,
+                                    value=orders[(supplier.id, product.id)].quantity
+                                    if (supplier.id, product.id) in orders
+                                    else 0,
+                                ).classes("flex-1")
+                                price = ui.number(
+                                    "Price",
+                                    min=0.0,
+                                    value=orders[(supplier.id, product.id)].price
+                                    if (supplier.id, product.id) in orders
+                                    else 0,
+                                ).classes("flex-1")
+                            ui.button(
+                                "Save",
+                                on_click=lambda sup=supplier,
+                                prod=product,
+                                qty=quantity,
+                                pri=price: ui_update_supply_order(
+                                    get_current_cycle_id(),
+                                    sup.id,
+                                    prod.id,
+                                    qty.value,
+                                    pri.value,
+                                ),
+                            ).props("flat color=primary")
+                ui.separator()
+                ui.label(f"Total: ${calculate_total_price(supplier.id):.2f}").classes(
+                    "text-subtitle1 font-bold"
+                )
+
+
+def create_product_demand_cards():
+    products = get_products()
+
+    with ui.column().classes("gap-3"):
+        ui.label("Product Demand Summary").classes("text-h6 font-medium text-gray-700")
+        for product in products:
+            total_customer_order = get_total_customer_order_quantity_by_product(
+                get_current_cycle_id(), product.id
+            )
+            total_supply_order = get_total_supply_order_quantity_by_product(
+                get_current_cycle_id(), product.id
+            )
+            remaining = round(total_customer_order - total_supply_order, 2)
+
+            with ui.row().classes("items-center gap-2"):
+                ui.label(f"{product.name}:").classes("text-body1 font-medium min-w-32")
+                if remaining > 0:
+                    ui.label(f"Need {remaining} more").classes(
+                        "text-body2 text-orange-600"
+                    )
+                else:
+                    ui.label(f"Surplus of {abs(remaining)}").classes(
+                        "text-body2 text-blue-600"
+                    )
 
 
 def content():
     ui.query("body").classes("bg-gray-100")
 
-    with ui.row().classes("w-full gap-32 p-8"):
-        # Left sidebar with navigation buttons
-        with ui.column().classes("gap-4"):
-            ui.button(
-                icon="home",
-                on_click=lambda: ui.navigate.to("/"),
-            ).props("round color=secondary").tooltip("Home")
-
-            ui.button(
-                icon="eco",
-                on_click=lambda: ui.navigate.to("/cycle/product"),
-            ).props("round color=primary").tooltip("Product")
-
-            ui.button(
-                icon="person",
-                on_click=lambda: ui.navigate.to("/cycle/customer"),
-            ).props("round color=green").tooltip("Customer")
+    with ui.row().classes("w-full gap-8 p-8"):
+        create_cycle_navigation_buttons()
 
         # Main content area
-        with ui.column().classes("flex-1 max-w-3xl gap-6"):
-            # Header section
-            with ui.card().classes("w-full"):
-                with ui.row().classes("items-center justify-between w-full"):
-                    with ui.column().classes("gap-1"):
-                        ui.label("Supply Management").classes(
-                            "text-h4 font-bold text-orange"
-                        )
-                        ui.label(f"Cycle ID: {cycle_id}").classes(
-                            "text-subtitle1 text-gray-600"
-                        )
-
-                    ui.button(
-                        "Back to Cycle",
-                        icon="arrow_back",
-                        on_click=lambda: ui.navigate.to("/cycle"),
-                    ).props("flat color=secondary")
+        with ui.column().classes("flex-1 max-w-4xl gap-6"):
+            create_header("Supplier Management")
 
             # Supply table section
-            ui.label("Supplies").classes("text-h6 font-medium text-gray-700 q-mt-md")
+            ui.label("Suppliers").classes("text-h6 font-medium text-gray-700 q-mt-md")
 
-            with ui.card().classes("w-full"):
-                supply_table()
+            create_supplier_cards()
+
+            # Product demand section
+            with ui.card().classes("w-full q-mt-md"):
+                create_product_demand_cards()

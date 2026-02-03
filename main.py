@@ -28,7 +28,7 @@ def ui_start_cycle(current_settings):
 def home():
     ui.query("body").classes("bg-gray-100")
 
-    # Store cycle information
+    # Store cycle information in app.storage.general['cycle_id']
     current_settings = get_settings()
     app.storage.general["cycle_id"] = current_settings.cycle_id
 

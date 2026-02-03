@@ -1,26 +1,37 @@
-from nicegui import ui, app
-from database.models import Customer, Product, Order
+from nicegui import ui
+from database.models import Customer, Product
 from database.db_operations import (
     get_customers,
     get_products,
     get_orders_by_customer_and_product,
-    update_order,
+    get_product_price_by_product_id,
+    update_customer_order,
 )
 from typing import Sequence
 import utils.validators as validators
-
-cycle_id = app.storage.general.get("cycle_id")
+from utils.helpers import get_current_cycle_id
+from ui.components.cycle_components import (
+    create_cycle_navigation_buttons,
+    create_header,
+)
 
 
 def calculate_total_price(
     customer: Customer,
     products: Sequence[Product],
-    orders: dict[tuple[int, int], Order],
-) -> float:
+    order_quantities: dict[tuple[int, int], float],
+) -> float | None:
     total = 0
     for product in products:
-        if (customer.id, product.id) in orders:
-            total += orders[(customer.id, product.id)].price
+        if (customer.id, product.id) in order_quantities:
+            price = get_product_price_by_product_id(get_current_cycle_id(), product.id)
+            if price is None:
+                raise ValueError(
+                    f"No price found for product {product.id} in cycle {get_current_cycle_id()}"
+                )
+            total += (price - customer.discount) * order_quantities[
+                (customer.id, product.id)
+            ]
     return total
 
 
@@ -31,19 +42,19 @@ def ui_update_order(
         if not validators.is_valid_number(quantity):
             ui.notify("Quantity has to be positive", type="negative")
             return
-        update_order(cycle_id, customer_id, product_id, quantity)
+        update_customer_order(cycle_id, customer_id, product_id, quantity)
         ui.notify("Successful!", type="positive")
     except Exception as e:
         ui.notify(f"Failed because of {e}", type="negative")
 
 
 # dynamically create a card for each customer
-def create_customer_card():
+def create_customer_cards():
     customers = get_customers()
     products = get_products()
-    orders = get_orders_by_customer_and_product(
-        cycle_id
-    )  # Dictionary for Order dataclass
+    order_quantities = get_orders_by_customer_and_product(
+        get_current_cycle_id()
+    )  # Dictionary for order quantity
 
     with ui.grid(columns=3):
         for customer in customers:
@@ -56,8 +67,8 @@ def create_customer_card():
                                 f"{product.name}",
                                 min=0.0,
                                 # Show order quantity if exists, otherwise 0
-                                value=orders[(customer.id, product.id)].quantity
-                                if (customer.id, product.id) in orders
+                                value=order_quantities[(customer.id, product.id)]
+                                if (customer.id, product.id) in order_quantities
                                 else 0,
                             )
                             ui.button(
@@ -65,58 +76,27 @@ def create_customer_card():
                                 on_click=lambda cust=customer,
                                 prod=product,
                                 qty=quantity: ui_update_order(
-                                    cycle_id,
+                                    get_current_cycle_id(),
                                     cust.id,
                                     prod.id,
                                     qty.value,
                                 ),
                             )
                     ui.label(
-                        f"Total: {calculate_total_price(customer, products, orders)}"
+                        f"Total: {calculate_total_price(customer, products, order_quantities)}"
                     )
 
 
 def content():
     ui.query("body").classes("bg-gray-100")
 
-    with ui.row().classes("w-full gap-32 p-8"):
-        # Left sidebar with navigation buttons
-        with ui.column().classes("gap-4"):
-            ui.button(
-                icon="home",
-                on_click=lambda: ui.navigate.to("/"),
-            ).props("round color=secondary").tooltip("Home")
+    with ui.row().classes("w-full gap-8 p-8"):
+        create_cycle_navigation_buttons()
 
-            ui.button(
-                icon="eco",
-                on_click=lambda: ui.navigate.to("/cycle/product"),
-            ).props("round color=primary").tooltip("Product")
-
-            ui.button(
-                icon="local_shipping",
-                on_click=lambda: ui.navigate.to("/cycle/supply"),
-            ).props("round color=orange").tooltip("Supply")
-
-        # Main content area
         with ui.column().classes("flex-1 max-w-4xl gap-6"):
-            # Header section
-            with ui.card().classes("w-full"):
-                with ui.row().classes("items-center justify-between w-full"):
-                    with ui.column().classes("gap-1"):
-                        ui.label("Customer Management").classes(
-                            "text-h4 font-bold text-green"
-                        )
-                        ui.label(f"Cycle ID: {cycle_id}").classes(
-                            "text-subtitle1 text-gray-600"
-                        )
-
-                    ui.button(
-                        "Back to Cycle",
-                        icon="arrow_back",
-                        on_click=lambda: ui.navigate.to("/cycle"),
-                    ).props("flat color=secondary")
+            create_header("Customer Management")
 
             # Customer table section
             ui.label("Customers").classes("text-h6 font-medium text-gray-700 q-mt-md")
 
-            create_customer_card()
+            create_customer_cards()

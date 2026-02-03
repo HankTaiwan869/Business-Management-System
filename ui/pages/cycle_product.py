@@ -1,12 +1,15 @@
-from nicegui import ui, app
+from nicegui import ui
 from database.db_operations import (
     get_product_prices,
     get_products,
     update_product_price,
 )
 import utils.validators as validators
-
-cycle_id = app.storage.general.get("cycle_id")
+from utils.helpers import get_current_cycle_id
+from ui.components.cycle_components import (
+    create_cycle_navigation_buttons,
+    create_header,
+)
 
 
 def update_price_dialog(product_name):
@@ -22,7 +25,9 @@ def update_price_dialog(product_name):
                         "Price has to be positive. Please try again.", type="negative"
                     )
                 update_product_price(
-                    cycle_id=cycle_id, product_name=product_name, new_price=new_price
+                    cycle_id=get_current_cycle_id(),
+                    product_name=product_name,
+                    new_price=new_price,
                 )
                 ui.notify(f"Price updated successfully to {new_price}", type="positive")
                 product_price_table.refresh()
@@ -47,7 +52,9 @@ def product_price_table():
         {"name": "update", "label": "Update", "align": "center"},
     ]
 
-    product_prices = get_product_prices(cycle_id)  # List of ProductPrice Objects
+    product_prices = get_product_prices(
+        get_current_cycle_id()
+    )  # List of ProductPrice Objects
     products = get_products()  # List of Product objects
     rows = []
     for product in products:
@@ -73,42 +80,11 @@ def product_price_table():
 def content():
     ui.query("body").classes("bg-gray-100")
 
-    with ui.row().classes("w-full gap-32 p-8"):
-        # Left sidebar with navigation buttons
-        with ui.column().classes("gap-4"):
-            ui.button(
-                icon="home",
-                on_click=lambda: ui.navigate.to("/"),
-            ).props("round color=secondary").tooltip("Home")
+    with ui.row().classes("w-full gap-8 p-8"):
+        create_cycle_navigation_buttons()
 
-            ui.button(
-                icon="person",
-                on_click=lambda: ui.navigate.to("/cycle/customer"),
-            ).props("round color=green").tooltip("Customer")
-
-            ui.button(
-                icon="local_shipping",
-                on_click=lambda: ui.navigate.to("/cycle/supply"),
-            ).props("round color=orange").tooltip("Supply")
-
-        # Main content area
         with ui.column().classes("flex-1 max-w-4xl gap-6"):
-            # Header section
-            with ui.card().classes("w-full"):
-                with ui.row().classes("items-center justify-between w-full"):
-                    with ui.column().classes("gap-1"):
-                        ui.label("Product Management").classes(
-                            "text-h4 font-bold text-primary"
-                        )
-                        ui.label(f"Cycle ID: {cycle_id}").classes(
-                            "text-subtitle1 text-gray-600"
-                        )
-
-                    ui.button(
-                        "Back to Cycle",
-                        icon="arrow_back",
-                        on_click=lambda: ui.navigate.to("/cycle"),
-                    ).props("flat color=secondary")
+            create_header("Product Management")
 
             # Product prices section
             ui.label("Product Prices").classes(
