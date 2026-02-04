@@ -1,45 +1,23 @@
 from nicegui import ui
-from database.models import Customer, Product
 from database.db_operations import (
     get_customers,
     get_products,
     get_orders_by_customer_and_product,
-    get_product_price_by_product_id,
     update_customer_order,
 )
-from typing import Sequence
-import utils.validators as validators
-from utils.helpers import get_current_cycle_id
+from utils.helpers import get_current_cycle_id, is_valid_number
+from logic.logic import calculate_total_price_by_customer
 from ui.components.cycle_components import (
     create_cycle_navigation_buttons,
     create_header,
 )
 
 
-def calculate_total_price(
-    customer: Customer,
-    products: Sequence[Product],
-    order_quantities: dict[tuple[int, int], float],
-) -> float | None:
-    total = 0
-    for product in products:
-        if (customer.id, product.id) in order_quantities:
-            price = get_product_price_by_product_id(get_current_cycle_id(), product.id)
-            if price is None:
-                raise ValueError(
-                    f"No price found for product {product.id} in cycle {get_current_cycle_id()}"
-                )
-            total += (price - customer.discount) * order_quantities[
-                (customer.id, product.id)
-            ]
-    return total
-
-
 def ui_update_order(
     cycle_id: int, customer_id: int, product_id: int, quantity: float
 ) -> None:
     try:
-        if not validators.is_valid_number(quantity):
+        if not is_valid_number(quantity):
             ui.notify("Quantity has to be positive", type="negative")
             return
         update_customer_order(cycle_id, customer_id, product_id, quantity)
@@ -73,7 +51,8 @@ def create_customer_cards():
                             )
                             ui.button(
                                 "Save",
-                                on_click=lambda cust=customer,
+                                on_click=lambda _,
+                                cust=customer,
                                 prod=product,
                                 qty=quantity: ui_update_order(
                                     get_current_cycle_id(),
@@ -83,7 +62,7 @@ def create_customer_cards():
                                 ),
                             )
                     ui.label(
-                        f"Total: {calculate_total_price(customer, products, order_quantities)}"
+                        f"Total: {calculate_total_price_by_customer(get_current_cycle_id(), customer, order_quantities)}"
                     )
 
 

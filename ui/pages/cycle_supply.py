@@ -4,12 +4,13 @@ from database.db_operations import (
     get_suppliers,
     get_orders_by_supplier_and_product,
     get_orders_by_suppliers,
-    get_total_customer_order_quantity_by_product,
-    get_total_supply_order_quantity_by_product,
     update_supplier_order,
 )
-import utils.validators as validator
-from utils.helpers import get_current_cycle_id
+from utils.helpers import get_current_cycle_id, is_valid_number
+from logic.logic import (
+    calculate_total_customer_order_quantity_by_product,
+    calculate_total_supply_order_quantity_by_product,
+)
 from ui.components.cycle_components import (
     create_cycle_navigation_buttons,
     create_header,
@@ -30,9 +31,7 @@ def ui_update_supply_order(
     cycle_id: int, supplier_id: int, product_id: int, quantity: float, price: float
 ) -> None:
     try:
-        if not validator.is_valid_number(quantity) or not validator.is_valid_number(
-            price
-        ):
+        if not is_valid_number(quantity) or not is_valid_number(price):
             ui.notify("Quantity/Price have to be positive.", type="negative")
             return
         update_supplier_order(cycle_id, supplier_id, product_id, quantity, price)
@@ -73,7 +72,8 @@ def create_supplier_cards():
                                 ).classes("flex-1")
                             ui.button(
                                 "Save",
-                                on_click=lambda sup=supplier,
+                                on_click=lambda _,
+                                sup=supplier,
                                 prod=product,
                                 qty=quantity,
                                 pri=price: ui_update_supply_order(
@@ -96,10 +96,10 @@ def create_product_demand_cards():
     with ui.column().classes("gap-3"):
         ui.label("Product Demand Summary").classes("text-h6 font-medium text-gray-700")
         for product in products:
-            total_customer_order = get_total_customer_order_quantity_by_product(
+            total_customer_order = calculate_total_customer_order_quantity_by_product(
                 get_current_cycle_id(), product.id
             )
-            total_supply_order = get_total_supply_order_quantity_by_product(
+            total_supply_order = calculate_total_supply_order_quantity_by_product(
                 get_current_cycle_id(), product.id
             )
             remaining = round(total_customer_order - total_supply_order, 2)

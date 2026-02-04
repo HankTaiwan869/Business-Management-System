@@ -7,17 +7,17 @@ from database.db_operations import (
     get_products,
     get_suppliers,
 )
-import utils.validators as validator
+from utils.helpers import is_valid_number, is_valid_name
 
 router = APIRouter(prefix="/overview")
 
 
 def submit_customer(name, discount):
     try:
-        if not validator.is_valid_name(name.value):
+        if not is_valid_name(name.value):
             ui.notify("Name cannot be empty. Please try again.", type="negative")
             return
-        if not validator.is_valid_number(discount.value):
+        if not is_valid_number(discount.value):
             ui.notify("Discount should be positive. Please try again.", type="negative")
         add_customer(name.value.strip(), discount.value)
         ui.notify(
@@ -32,7 +32,7 @@ def submit_customer(name, discount):
 
 def submit_product(product_name_input):
     try:
-        if not validator.is_valid_name(product_name_input.value):
+        if not is_valid_name(product_name_input.value):
             ui.notify("Name cannot be empty. Please try again.", type="negative")
             return
         add_product(product_name_input.value.strip())
@@ -48,7 +48,7 @@ def submit_product(product_name_input):
 
 def submit_supplier(supplier_name_input):
     try:
-        if not validator.is_valid_name(supplier_name_input.value):
+        if not is_valid_name(supplier_name_input.value):
             ui.notify("Name cannot be empty. Please try again.", type="negative")
             return
         add_supplier(supplier_name_input.value.strip())

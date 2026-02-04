@@ -12,7 +12,7 @@ from .models import (
 )
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
-from datetime import datetime
+from datetime import datetime, date
 from typing import Sequence
 
 
@@ -64,20 +64,29 @@ def start_cycle():
 
 
 # returns True if success, False if fail
-def finish_cycle() -> bool:
+def finish_cycle(revenue: float, cost: float) -> bool:
     with SessionLocal() as session:
         try:
             settings = session.scalar(select(Settings))
             if settings is None:
                 return False
-            settings.is_in_cycle = False
-            id = settings.cycle_id
-            current_cycle = session.scalar(select(Cycle).where(Cycle.id == id))
+            cycle_id = settings.cycle_id
+            if cycle_id is None:
+                return False
+            current_cycle = session.scalar(select(Cycle).where(Cycle.id == cycle_id))
             if current_cycle is None:
                 return False
+
+            # Update current cycle
+            settings.is_in_cycle = False
             current_cycle.end_date = datetime.now().isoformat()
+            current_cycle.revenue = revenue
+            current_cycle.cost = cost
+            current_cycle.profit = revenue - cost
+
             session.commit()
             return True
+
         except Exception as e:
             session.rollback()
             print(f"Error: {e}")
@@ -88,6 +97,14 @@ def get_settings() -> Settings:
     with SessionLocal() as session:
         settings = session.query(Settings).one()
         return settings
+
+
+def get_cycle_start_date(cycle_id: int) -> date:
+    with SessionLocal() as session:
+        row = session.scalars(
+            select(Cycle.start_date).where(Cycle.id == cycle_id)
+        ).one()
+    return datetime.fromisoformat(row).date()
 
 
 def add_customer(name, discount=0.0) -> None:
@@ -163,27 +180,6 @@ def get_orders_by_suppliers(cycle_id: int, supplier_id: int) -> Sequence[SupplyO
     return rows
 
 
-def update_product_price(cycle_id: int, product_name: str, new_price: float):
-    with SessionLocal() as session:
-        product_id = session.scalars(
-            select(Product.id).where(Product.name == product_name)
-        ).one()
-        product_price = session.scalars(
-            select(ProductPrice).where(
-                ProductPrice.cycle_id == cycle_id,
-                ProductPrice.product_id == product_id,
-            )
-        ).one_or_none()
-        if product_price:
-            product_price.sell_price = new_price
-        else:
-            product_price = ProductPrice(
-                cycle_id=cycle_id, product_id=product_id, sell_price=new_price
-            )
-            session.add(product_price)
-        session.commit()
-
-
 def get_orders_by_customer_and_product(cycle_id: int) -> dict[tuple[int, int], float]:
     with SessionLocal() as session:
         orders = session.execute(
@@ -196,28 +192,30 @@ def get_orders_by_customer_and_product(cycle_id: int) -> dict[tuple[int, int], f
     return {(order.customer_id, order.product_id): order.quantity for order in orders}
 
 
-def get_total_customer_order_quantity_by_product(
+def get_customer_orders_by_product(
     cycle_id: int, product_id: int
-) -> float:
+) -> Sequence[CustomerOrder]:
     with SessionLocal() as session:
         orders = session.scalars(
-            select(CustomerOrder.quantity).where(
+            select(CustomerOrder).where(
                 CustomerOrder.cycle_id == cycle_id,
                 CustomerOrder.product_id == product_id,
             )
         ).all()
-    return sum(orders)
+    return orders
 
 
-def get_total_supply_order_quantity_by_product(cycle_id: int, product_id: int) -> float:
+def get_supply_orders_by_product(
+    cycle_id: int, product_id: int
+) -> Sequence[SupplyOrder]:
     with SessionLocal() as session:
         orders = session.scalars(
-            select(SupplyOrder.quantity).where(
+            select(SupplyOrder).where(
                 SupplyOrder.cycle_id == cycle_id,
                 SupplyOrder.product_id == product_id,
             )
         ).all()
-    return sum(orders)
+    return orders
 
 
 def get_orders_by_supplier_and_product(
@@ -238,6 +236,27 @@ def get_orders_by_supplier_and_product(
         )
         for order in orders
     }
+
+
+def update_product_price(cycle_id: int, product_name: str, new_price: float):
+    with SessionLocal() as session:
+        product_id = session.scalars(
+            select(Product.id).where(Product.name == product_name)
+        ).one()
+        product_price = session.scalars(
+            select(ProductPrice).where(
+                ProductPrice.cycle_id == cycle_id,
+                ProductPrice.product_id == product_id,
+            )
+        ).one_or_none()
+        if product_price:
+            product_price.sell_price = new_price
+        else:
+            product_price = ProductPrice(
+                cycle_id=cycle_id, product_id=product_id, sell_price=new_price
+            )
+            session.add(product_price)
+        session.commit()
 
 
 def update_customer_order(

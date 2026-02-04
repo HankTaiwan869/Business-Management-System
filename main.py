@@ -1,12 +1,18 @@
 from nicegui import ui, app
-from ui.pages import cycle_router
-from ui.pages import overview
+from ui.pages import cycle_router, overview, business_report
 
 # Development only import
-from database.db_operations import db_reset, start_cycle, get_settings
+from database.db_operations import (
+    db_reset,
+    start_cycle,
+    get_settings,
+    get_cycle_start_date,
+)
+from utils.helpers import get_current_cycle_id
 
 app.include_router(cycle_router.router)
 app.include_router(overview.router)
+app.include_router(business_report.router)
 
 
 # developemtn only
@@ -37,21 +43,17 @@ def home():
         with ui.card().classes("w-full"):
             with ui.column().classes("p-4 gap-2"):
                 ui.label("Welcome to Cycle Manager").classes("text-h4 font-bold")
-                ui.label("Manage your cycles and database operations").classes(
-                    "text-subtitle1 text-gray-600"
-                )
 
         # Current cycle status card
-        with ui.card().classes("w-full"):
-            with ui.row().classes("items-center justify-between w-full"):
-                with ui.column().classes("gap-1"):
-                    ui.label("Current Status").classes("text-h6 font-medium")
-                    with ui.row().classes("items-center gap-2"):
-                        ui.icon("info", size="20px").classes("text-primary")
-                        ui.label(f"Cycle ID: {current_settings.cycle_id}").classes(
-                            "text-subtitle1"
-                        )
+        ui.label("Current Status").classes("text-h6 font-medium text-gray-700 q-mt-md")
 
+        with ui.card().classes("w-full"):
+            with ui.row().classes("items-center justify-between w-full p-2"):
+                with ui.row().classes("items-center gap-2"):
+                    ui.icon("info", size="20px").classes("text-primary")
+                    ui.label(
+                        f"Cycle ID: {current_settings.cycle_id} (starting from {get_cycle_start_date(get_current_cycle_id())})"
+                    ).classes("text-subtitle1")
                 # Status badge
                 with (
                     ui.badge()
@@ -68,7 +70,7 @@ def home():
         with ui.row().classes("w-full gap-4"):
             # Start new cycle card
             start_card = ui.card().classes(
-                "flex-1 cursor-pointer hover:shadow-lg transition-shadow"
+                "flex-1 cursor-pointer hover:shadow-lg transition-shadow h-70"
             )
             start_card.bind_visibility_from(
                 current_settings, "is_in_cycle", lambda v: not v
@@ -81,38 +83,59 @@ def home():
                         ui.navigate.to("/cycle"),
                     ],
                 )
-                with ui.column().classes("items-center gap-2 p-4"):
-                    ui.icon("play_circle", size="40px").classes("text-green")
-                    ui.label("Start New Cycle").classes("text-subtitle1 font-medium")
+                with ui.column().classes(
+                    "items-center justify-center gap-3 p-4 h-full"
+                ):
+                    ui.icon("play_circle", size="48px").classes("text-green")
+                    ui.label("Start New Cycle").classes("text-h6 font-medium")
                     ui.label("Begin a fresh cycle").classes(
-                        "text-caption text-gray-600 text-center"
+                        "text-subtitle2 text-gray-600 text-center"
                     )
 
             # Continue cycle card
             continue_card = ui.card().classes(
-                "flex-1 cursor-pointer hover:shadow-lg transition-shadow"
+                "flex-1 cursor-pointer hover:shadow-lg transition-shadow h-70"
             )
             continue_card.bind_visibility_from(current_settings, "is_in_cycle")
             with continue_card:
                 continue_card.on("click", lambda: ui.navigate.to("/cycle"))
-                with ui.column().classes("items-center gap-2 p-4"):
-                    ui.icon("restart_alt", size="40px").classes("text-blue")
-                    ui.label("Continue Cycle").classes("text-subtitle1 font-medium")
+                with ui.column().classes(
+                    "items-center justify-center gap-3 p-4 h-full"
+                ):
+                    ui.icon("restart_alt", size="48px").classes("text-blue")
+                    ui.label("Continue Cycle").classes("text-h6 font-medium")
                     ui.label("Resume current cycle").classes(
-                        "text-caption text-gray-600 text-center"
+                        "text-subtitle2 text-gray-600 text-center"
                     )
 
             # Overview card
             with (
                 ui.card()
-                .classes("flex-1 cursor-pointer hover:shadow-lg transition-shadow")
+                .classes("flex-1 cursor-pointer hover:shadow-lg transition-shadow h-70")
                 .on("click", lambda: ui.navigate.to("/overview"))
             ):
-                with ui.column().classes("items-center gap-2 p-4"):
-                    ui.icon("dashboard", size="40px").classes("text-purple")
-                    ui.label("Overview").classes("text-subtitle1 font-medium")
+                with ui.column().classes(
+                    "items-center justify-center gap-3 p-4 h-full"
+                ):
+                    ui.icon("dashboard", size="48px").classes("text-purple")
+                    ui.label("Overview").classes("text-h6 font-medium")
                     ui.label("Manage database").classes(
-                        "text-caption text-gray-600 text-center"
+                        "text-subtitle2 text-gray-600 text-center"
+                    )
+
+            # Report card
+            with (
+                ui.card()
+                .classes("flex-1 cursor-pointer hover:shadow-lg transition-shadow h-70")
+                .on("click", lambda: ui.navigate.to("/report"))
+            ):
+                with ui.column().classes(
+                    "items-center justify-center gap-3 p-4 h-full"
+                ):
+                    ui.icon("assessment", size="48px").classes("text-blue")
+                    ui.label("Report").classes("text-h6 font-medium")
+                    ui.label("View reports").classes(
+                        "text-subtitle2 text-gray-600 text-center"
                     )
 
         # Developer section

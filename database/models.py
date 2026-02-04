@@ -33,6 +33,9 @@ class Cycle(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     start_date: Mapped[str] = mapped_column(Text, nullable=False)
     end_date: Mapped[str | None] = mapped_column(Text)
+    revenue: Mapped[float | None] = mapped_column(REAL)
+    cost: Mapped[float | None] = mapped_column(REAL)
+    profit: Mapped[float | None] = mapped_column(REAL)
 
     # Relationships
     customer_orders: Mapped[List["CustomerOrder"]] = relationship(

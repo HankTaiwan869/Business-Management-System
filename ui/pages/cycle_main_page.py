@@ -1,6 +1,7 @@
 from nicegui import ui
 from database.db_operations import finish_cycle
 from utils.helpers import get_current_cycle_id
+from logic.logic import calculate_total_revenue, calculate_total_cost
 
 
 def show_finish_cycle_dialog():
@@ -9,7 +10,10 @@ def show_finish_cycle_dialog():
         ui.label("Are you sure you want to finish the current cycle?").classes("mb-4")
 
         def ui_finish_cycle():
-            if finish_cycle():
+            if finish_cycle(
+                calculate_total_revenue(get_current_cycle_id()),
+                calculate_total_cost(get_current_cycle_id()),
+            ):
                 ui.notify("Success. Redirecting to the main page.", type="positive")
                 dialog.close()
                 ui.navigate.to("/")

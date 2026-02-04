@@ -4,8 +4,7 @@ from database.db_operations import (
     get_products,
     update_product_price,
 )
-import utils.validators as validators
-from utils.helpers import get_current_cycle_id
+from utils.helpers import get_current_cycle_id, is_valid_number
 from ui.components.cycle_components import (
     create_cycle_navigation_buttons,
     create_header,
@@ -20,7 +19,7 @@ def update_price_dialog(product_name):
         def update_price():
             try:
                 new_price = float(price_input.value)
-                if not validators.is_valid_number(new_price):
+                if not is_valid_number(new_price):
                     ui.notify(
                         "Price has to be positive. Please try again.", type="negative"
                     )
