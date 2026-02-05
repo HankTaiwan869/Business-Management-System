@@ -51,16 +51,15 @@ def create_customer_cards():
                             )
                             ui.button(
                                 "Save",
-                                on_click=lambda _,
-                                cust=customer,
-                                prod=product,
-                                qty=quantity: ui_update_order(
-                                    get_current_cycle_id(),
-                                    cust.id,
-                                    prod.id,
-                                    qty.value,
+                                on_click=lambda _, cust=customer, prod=product, qty=quantity: (
+                                    ui_update_order(
+                                        get_current_cycle_id(),
+                                        cust.id,
+                                        prod.id,
+                                        qty.value,
+                                    )
                                 ),
-                            )
+                            ).props("outline color=primary")
                     ui.label(
                         f"Total: {calculate_total_price_by_customer(get_current_cycle_id(), customer, order_quantities)}"
                     )

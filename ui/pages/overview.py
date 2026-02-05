@@ -6,10 +6,52 @@ from database.db_operations import (
     get_customers,
     get_products,
     get_suppliers,
+    update_customer_discount,
 )
 from utils.helpers import is_valid_number, is_valid_name
 
 router = APIRouter(prefix="/overview")
+
+
+def ui_update_customer_discount(dialog, name: str, discount: float) -> None:
+    try:
+        if not is_valid_number(discount):
+            ui.notify("Discount should be positive integer", type="negative")
+            return
+        update_customer_discount(name, discount)
+        ui.notify("Success!", type="positive")
+        customer_table.refresh()
+        dialog.close()
+    except Exception as e:
+        ui.notify(f"Error: {e}", type="negative")
+
+
+def update_customer_dialogue():
+    with ui.dialog() as dialog, ui.card().style("width: 400px; height: 300px;"):
+        customers = get_customers()
+        customer_discount_map = {
+            customer.name: customer.discount for customer in customers
+        }
+
+        def show_discount(name: str) -> None:
+            discount = ui.number(
+                "Enter New Discount", min=0, value=customer_discount_map[name]
+            ).classes("w-full")
+            ui.button(
+                "Save",
+                on_click=lambda: ui_update_customer_discount(
+                    dialog, name, discount.value
+                ),
+            ).classes("w-full mt-4").props("outline color=primary")
+
+        ui.label("Update Customer").classes("text-h6")
+        ui.select(
+            options=list(customer_discount_map.keys()),
+            clearable=True,
+            on_change=lambda name: show_discount(name.value),
+        ).classes("w-full")
+
+    dialog.open()
 
 
 def submit_customer(name, discount):
@@ -129,7 +171,7 @@ def overview_page():
         with ui.card().classes("w-full"):
             with ui.tabs().classes("w-full") as tabs:
                 ui.tab("add_customer", "Customer", icon="person")
-                ui.tab("add_product", "Product", icon="inventory_2")
+                ui.tab("add_product", "Product", icon="eco")
                 ui.tab("add_supplier", "Supplier", icon="local_shipping")
 
             ui.separator()
@@ -142,13 +184,19 @@ def overview_page():
                         discount_input = ui.number(
                             "Discount", value=0.0, min=0.0
                         ).classes("w-full")
-                        ui.button(
-                            "Add Customer",
-                            icon="add",
-                            on_click=lambda: submit_customer(
-                                name_input, discount_input
-                            ),
-                        ).props("color=primary")
+                        with ui.row():
+                            ui.button(
+                                "Add Customer",
+                                icon="add",
+                                on_click=lambda: submit_customer(
+                                    name_input, discount_input
+                                ),
+                            ).props("outline color=primary")
+                            ui.button(
+                                "Update Customer",
+                                icon="edit",
+                                on_click=update_customer_dialogue,
+                            ).props("outline color=primary")
 
                         ui.separator().classes("q-my-md")
                         ui.label("Current Customers").classes(
@@ -164,7 +212,7 @@ def overview_page():
                             "Add Product",
                             icon="add",
                             on_click=lambda: submit_product(product_name_input),
-                        ).props("color=primary")
+                        ).props("outline color=primary")
 
                         ui.separator().classes("q-my-md")
                         ui.label("Current Products").classes(
@@ -182,7 +230,7 @@ def overview_page():
                             "Add Supplier",
                             icon="add",
                             on_click=lambda: submit_supplier(supplier_name_input),
-                        ).props("color=primary")
+                        ).props("outline color=primary")
 
                         ui.separator().classes("q-my-md")
                         ui.label("Current Suppliers").classes(

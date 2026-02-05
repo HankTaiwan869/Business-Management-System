@@ -10,16 +10,17 @@ from .models import (
     Settings,
     Supply_quantity_and_price,
 )
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine, select, func, Row
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime, date
-from typing import Sequence
+from typing import Sequence, Any
 
 
 engine = create_engine("sqlite:///data/Business.db", echo=False)
 SessionLocal = sessionmaker(bind=engine)
 
 
+# development only
 def db_reset():
     try:
         Base.metadata.drop_all(bind=engine)
@@ -35,6 +36,27 @@ def db_reset():
 
     except Exception as e:
         print(f"An error occurred during database reset: {e}")
+
+
+# Initialize the database when program starts for the firs time
+def initialize_database():
+    """Initialize database tables and settings on first run"""
+    try:
+        # Try to get settings
+        get_current_settings()
+    except Exception as e:
+        # If tables don't exist, create them
+        print(f"Database not initialized. Creating tables... ({e})")
+
+        # Create all tables
+        Base.metadata.create_all(bind=engine)
+
+        with SessionLocal() as session:
+            initial_setting = Settings(is_in_cycle=False, cycle_id=None)
+            session.add(initial_setting)
+            session.commit()
+
+        print("Database initialized successfully")
 
 
 def start_cycle():
@@ -93,17 +115,64 @@ def finish_cycle(revenue: float, cost: float) -> bool:
             return False
 
 
-def get_settings() -> Settings:
+def get_monthly_figures(year: int, month: int) -> tuple[Any, Any]:
+    with SessionLocal() as session:
+        result = session.execute(
+            select(func.sum(Cycle.revenue), func.sum(Cycle.cost)).where(
+                Cycle.end_date.like(f"{year}-{str(month).zfill(2)}%"),
+                Cycle.revenue.is_not(None),
+                Cycle.cost.is_not(None),
+            )
+        ).one()
+    revenue, cost = result
+    return (revenue or 0, cost or 0)
+
+
+def get_profits_by_cycle(
+    begin: int, end: int
+) -> Sequence[Row[tuple[int, float | None]]]:
+    with SessionLocal() as session:
+        profits = session.execute(
+            select(Cycle.id, Cycle.profit).where(Cycle.id >= begin, Cycle.id <= end)
+        ).all()
+    return profits
+
+
+def get_customer_orders_by_cycle_and_product(
+    begin: int, end: int
+) -> Sequence[Row[tuple[int, str, float]]]:
+    with SessionLocal() as session:
+        # Query to get aggregated quantities by cycle and product
+        query = (
+            select(
+                CustomerOrder.cycle_id,
+                Product.name.label("product_name"),
+                func.sum(CustomerOrder.quantity).label("total_quantity"),
+            )
+            .join(Product, CustomerOrder.product_id == Product.id)
+            .where(CustomerOrder.cycle_id >= begin, CustomerOrder.cycle_id <= end)
+            .group_by(CustomerOrder.cycle_id, Product.name)
+            .order_by(CustomerOrder.cycle_id, Product.name)
+        )
+
+        results = session.execute(query).all()
+
+    return results
+
+
+def get_current_settings() -> Settings:
     with SessionLocal() as session:
         settings = session.query(Settings).one()
         return settings
 
 
-def get_cycle_start_date(cycle_id: int) -> date:
+def get_cycle_start_date(cycle_id: int) -> date | None:
     with SessionLocal() as session:
         row = session.scalars(
             select(Cycle.start_date).where(Cycle.id == cycle_id)
-        ).one()
+        ).one_or_none()
+    if row is None:
+        return None
     return datetime.fromisoformat(row).date()
 
 
@@ -238,6 +307,13 @@ def get_orders_by_supplier_and_product(
     }
 
 
+def update_customer_discount(name: str, discount: float) -> None:
+    with SessionLocal() as session:
+        customer = session.scalars(select(Customer).where(Customer.name == name)).one()
+        customer.discount = discount
+        session.commit()
+
+
 def update_product_price(cycle_id: int, product_name: str, new_price: float):
     with SessionLocal() as session:
         product_id = session.scalars(
@@ -323,7 +399,3 @@ def update_supplier_order(
             order.buy_price = price
             order.created_at_timestamp = datetime.now().isoformat()
         session.commit()
-
-
-if __name__ == "__main__":
-    get_product_prices(1)

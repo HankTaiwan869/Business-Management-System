@@ -72,18 +72,16 @@ def create_supplier_cards():
                                 ).classes("flex-1")
                             ui.button(
                                 "Save",
-                                on_click=lambda _,
-                                sup=supplier,
-                                prod=product,
-                                qty=quantity,
-                                pri=price: ui_update_supply_order(
-                                    get_current_cycle_id(),
-                                    sup.id,
-                                    prod.id,
-                                    qty.value,
-                                    pri.value,
+                                on_click=lambda _, sup=supplier, prod=product, qty=quantity, pri=price: (
+                                    ui_update_supply_order(
+                                        get_current_cycle_id(),
+                                        sup.id,
+                                        prod.id,
+                                        qty.value,
+                                        pri.value,
+                                    )
                                 ),
-                            ).props("flat color=primary")
+                            ).props("outline color=primary").classes("self-end")
                 ui.separator()
                 ui.label(f"Total: ${calculate_total_price(supplier.id):.2f}").classes(
                     "text-subtitle1 font-bold"

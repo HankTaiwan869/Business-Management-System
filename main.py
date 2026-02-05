@@ -5,9 +5,11 @@ from ui.pages import cycle_router, overview, business_report
 from database.db_operations import (
     db_reset,
     start_cycle,
-    get_settings,
+    get_current_settings,
     get_cycle_start_date,
+    initialize_database,
 )
+
 from utils.helpers import get_current_cycle_id
 
 app.include_router(cycle_router.router)
@@ -15,7 +17,7 @@ app.include_router(overview.router)
 app.include_router(business_report.router)
 
 
-# developemtn only
+# ======== developemtn only =========
 def reset():
     try:
         db_reset()
@@ -25,17 +27,21 @@ def reset():
         ui.notify(f"Error resetting database: {e}", color="red")
 
 
+# ======== developemtn only =========
+
+
 def ui_start_cycle(current_settings):
     start_cycle()
-    app.storage.general["cycle_id"] = get_settings().cycle_id
+    app.storage.general["cycle_id"] = get_current_settings().cycle_id
 
 
 @ui.page("/")
 def home():
     ui.query("body").classes("bg-gray-100")
 
-    # Store cycle information in app.storage.general['cycle_id']
-    current_settings = get_settings()
+    initialize_database()
+
+    current_settings = get_current_settings()
     app.storage.general["cycle_id"] = current_settings.cycle_id
 
     with ui.column().classes("w-full max-w-4xl mx-auto p-8 gap-6"):
@@ -84,7 +90,7 @@ def home():
                     ],
                 )
                 with ui.column().classes(
-                    "items-center justify-center gap-3 p-4 h-full"
+                    "items-center justify-center gap-3 p-4 w-full h-full"
                 ):
                     ui.icon("play_circle", size="48px").classes("text-green")
                     ui.label("Start New Cycle").classes("text-h6 font-medium")
@@ -100,7 +106,7 @@ def home():
             with continue_card:
                 continue_card.on("click", lambda: ui.navigate.to("/cycle"))
                 with ui.column().classes(
-                    "items-center justify-center gap-3 p-4 h-full"
+                    "items-center justify-center gap-3 p-4 w-full h-full"
                 ):
                     ui.icon("restart_alt", size="48px").classes("text-blue")
                     ui.label("Continue Cycle").classes("text-h6 font-medium")
@@ -115,7 +121,7 @@ def home():
                 .on("click", lambda: ui.navigate.to("/overview"))
             ):
                 with ui.column().classes(
-                    "items-center justify-center gap-3 p-4 h-full"
+                    "items-center justify-center gap-3 p-4 w-full h-full"
                 ):
                     ui.icon("dashboard", size="48px").classes("text-purple")
                     ui.label("Overview").classes("text-h6 font-medium")
@@ -130,7 +136,7 @@ def home():
                 .on("click", lambda: ui.navigate.to("/report"))
             ):
                 with ui.column().classes(
-                    "items-center justify-center gap-3 p-4 h-full"
+                    "items-center justify-center gap-3 p-4 w-full h-full"
                 ):
                     ui.icon("assessment", size="48px").classes("text-blue")
                     ui.label("Report").classes("text-h6 font-medium")
@@ -138,7 +144,7 @@ def home():
                         "text-subtitle2 text-gray-600 text-center"
                     )
 
-        # Developer section
+        # ======== development only =========
         with (
             ui.expansion("Developer Tools", icon="build")
             .classes("w-full q-mt-lg bg-red-50")
@@ -151,6 +157,7 @@ def home():
                 ui.button(
                     "Reset Database", on_click=reset, icon="delete_forever"
                 ).props("color=red outline")
+        # ======== development only =========
 
 
 ui.run()

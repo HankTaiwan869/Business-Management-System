@@ -1,6 +1,6 @@
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
+from matplotlib.ticker import FuncFormatter
 from database.db_operations import (
     get_products,
     get_customers,
@@ -8,12 +8,14 @@ from database.db_operations import (
     get_product_price_by_product_id,
     get_supply_orders_by_product,
     get_customer_by_id,
+    get_profits_by_cycle,
+    get_customer_orders_by_cycle_and_product,
 )
+import matplotlib.pyplot as plt
+
 
 # ======== Prepare data for plotting ==========
-
-
-def profit_by_product_data(cycle_id) -> pd.DataFrame:
+def _profit_by_product_data(cycle_id) -> pd.DataFrame:
     products = get_products()
     customers = get_customers()
 
@@ -54,7 +56,7 @@ def profit_by_product_data(cycle_id) -> pd.DataFrame:
     return df.sort_values("profit", ascending=False)
 
 
-def revenue_by_customer_data(cycle_id: int) -> dict[str, float]:
+def _revenue_by_customer_data(cycle_id: int) -> dict[str, float]:
     """
     Prepare revenue data grouped by customer for a given cycle.
 
@@ -94,14 +96,42 @@ def revenue_by_customer_data(cycle_id: int) -> dict[str, float]:
     return revenue_by_customer
 
 
+def _orders_by_product_and_cycle_data(begin: int, end: int) -> pd.DataFrame:
+    rows = get_customer_orders_by_cycle_and_product(begin, end)
+
+    # Convert to list of dicts for DataFrame creation
+    data = [
+        {
+            "cycle_id": row.cycle_id,
+            "product_name": row.product_name,
+            "total_quantity": row.total_quantity,
+        }
+        for row in rows
+    ]
+    df = pd.DataFrame(data)
+
+    # If no data, return empty DataFrame with proper structure
+    if df.empty:
+        print("There is no data fetched.")
+        return df
+
+    # Pivot to get products as columns, cycles as rows
+    df_pivot = df.pivot(
+        index="cycle_id", columns="product_name", values="total_quantity"
+    ).fillna(0)
+
+    return df_pivot
+
+
 # ========== Plotting function ===========
 def profit_by_product_plot(fig, cycle_id: int) -> None:
     """
     Create a horizontal bar chart showing net profit by product for a given cycle.
     """
-    df = profit_by_product_data(cycle_id)
+    df = _profit_by_product_data(cycle_id)
     sns.set_style("whitegrid")
     sns.set_context("notebook", font_scale=1.1)
+    sns.set_theme(font="Microsoft JhengHei")
 
     ax = fig.gca()
 
@@ -117,12 +147,12 @@ def profit_by_product_plot(fig, cycle_id: int) -> None:
     )
 
     # Enhance labels and title
-    ax.set_xlabel("Net Profit ($)", fontsize=12, fontweight="bold")
-    ax.set_ylabel("Product", fontsize=12, fontweight="bold")
+    ax.set_xlabel("Net Profit", fontsize=12, fontweight="bold")
+    ax.set_ylabel("", fontsize=12, fontweight="bold")
     ax.set_title("Net Profit by Product", fontsize=14, fontweight="bold", pad=20)
 
     # Format x-axis to show currency
-    ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f"${x:,.0f}"))
+    ax.xaxis.set_major_formatter(FuncFormatter(lambda x, p: f"${x:,.0f}"))
 
     # Add value labels on bars
     for container in ax.containers:
@@ -140,7 +170,7 @@ def revenue_by_customer_plot(fig, cycle_id: int) -> None:
     Create a horizontal bar chart showing revenue by customer for a given cycle.
     """
     # Get the data
-    revenue_data = revenue_by_customer_data(cycle_id)
+    revenue_data = _revenue_by_customer_data(cycle_id)
 
     if not revenue_data:
         print(f"No revenue data found for cycle {cycle_id}")
@@ -159,6 +189,7 @@ def revenue_by_customer_plot(fig, cycle_id: int) -> None:
 
     sns.set_style("whitegrid")
     sns.set_context("notebook", font_scale=1.1)
+    sns.set_theme(font="Microsoft JhengHei")
 
     ax = fig.gca()
 
@@ -173,20 +204,100 @@ def revenue_by_customer_plot(fig, cycle_id: int) -> None:
         ax=ax,
     )
 
-    # Enhance labels and title
-    ax.set_xlabel("Revenue ($)", fontsize=12, fontweight="bold")
-    ax.set_ylabel("Customer", fontsize=12, fontweight="bold")
+    ax.set_xlabel("Revenue", fontsize=12, fontweight="bold")
+    ax.set_ylabel("", fontsize=12, fontweight="bold")
     ax.set_title("Revenue by Customer", fontsize=14, fontweight="bold", pad=20)
 
-    # Format x-axis to show currency
-    ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f"${x:,.0f}"))
-
-    # Add value labels on bars
+    ax.xaxis.set_major_formatter(FuncFormatter(lambda x, p: f"${x:,.0f}"))
     for container in ax.containers:
         ax.bar_label(container, fmt="$%.0f", padding=3)
 
     # Remove top and right spines for cleaner look
     sns.despine(left=False, bottom=False)
 
-    # Adjust layout
+    plt.tight_layout()
+
+
+def profits_by_cycle_plot(fig, begin: int, end: int) -> None:
+    """
+    Create a line plot with points showing profits by cycle for a given range.
+    """
+    sns.set_style("whitegrid")
+    sns.set_context("notebook", font_scale=1.1)
+    sns.set_theme(font="Microsoft JhengHei")
+
+    ax = fig.gca()
+
+    # Prepare the data
+    rows = get_profits_by_cycle(begin, end)
+    x = [row.id for row in rows]
+    y = [row.profit for row in rows]
+
+    # Create line plot with points
+    ax.plot(
+        x,
+        y,
+        marker="o",
+        markersize=8,
+        color="#6B9BD1",
+        alpha=0.7,
+        markeredgecolor="white",
+        markeredgewidth=1.5,
+        linewidth=2,
+    )
+
+    ax.set_xlabel("Cycle", fontsize=12, fontweight="bold")
+    ax.set_ylabel("Profit", fontsize=12, fontweight="bold")
+    ax.set_title("Profit", fontsize=14, fontweight="bold", pad=20)
+
+    ax.yaxis.set_major_formatter(FuncFormatter(lambda x, p: f"${x:,.0f}"))
+
+    # Remove top and right spines for cleaner look
+    sns.despine(left=False, bottom=False)
+    plt.tight_layout()
+
+
+def orders_by_product_and_cycle_plot(fig, begin: int, end: int) -> None:
+    sns.set_style("whitegrid")
+    sns.set_context("notebook", font_scale=1.1)
+    sns.set_theme(font="Microsoft JhengHei")
+
+    ax = fig.gca()
+    df = _orders_by_product_and_cycle_data(begin, end)
+
+    if df.empty:
+        return
+
+    # Create stacked bar chart with improved styling
+    df.plot(
+        kind="bar",
+        stacked=True,
+        ax=ax,
+        alpha=0.7,
+        edgecolor="white",
+        linewidth=1.5,
+        width=0.7,
+    )
+
+    ax.set_xlabel("Cycle", fontsize=12, fontweight="bold")
+    ax.set_ylabel("Quantity", fontsize=12, fontweight="bold")
+    ax.set_title("Customer Orders by Product", fontsize=14, fontweight="bold", pad=20)
+
+    ax.yaxis.set_major_formatter(FuncFormatter(lambda x, p: f"{x:,.0f}"))
+
+    # Rotate x-axis labels for better readability
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=0)
+
+    ax.legend(
+        title="Product",
+        title_fontsize=10,
+        fontsize=9,
+        loc="upper left",
+        frameon=True,
+        framealpha=0.9,
+        edgecolor="lightgray",
+    )
+
+    # Remove top and right spines for cleaner look
+    sns.despine(left=False, bottom=False)
     plt.tight_layout()
