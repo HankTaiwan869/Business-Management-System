@@ -1,6 +1,6 @@
 import pandas as pd
 import seaborn as sns
-from matplotlib.ticker import FuncFormatter
+from matplotlib.ticker import FuncFormatter, MaxNLocator
 from database.db_operations import (
     get_products,
     get_customers,
@@ -147,9 +147,9 @@ def profit_by_product_plot(fig, cycle_id: int) -> None:
     )
 
     # Enhance labels and title
-    ax.set_xlabel("Net Profit", fontsize=12, fontweight="bold")
+    ax.set_xlabel("利潤", fontsize=12, fontweight="bold")
     ax.set_ylabel("", fontsize=12, fontweight="bold")
-    ax.set_title("Net Profit by Product", fontsize=14, fontweight="bold", pad=20)
+    ax.set_title("各產品利潤比較", fontsize=14, fontweight="bold", pad=20)
 
     # Format x-axis to show currency
     ax.xaxis.set_major_formatter(FuncFormatter(lambda x, p: f"${x:,.0f}"))
@@ -204,9 +204,9 @@ def revenue_by_customer_plot(fig, cycle_id: int) -> None:
         ax=ax,
     )
 
-    ax.set_xlabel("Revenue", fontsize=12, fontweight="bold")
+    ax.set_xlabel("營收", fontsize=12, fontweight="bold")
     ax.set_ylabel("", fontsize=12, fontweight="bold")
-    ax.set_title("Revenue by Customer", fontsize=14, fontweight="bold", pad=20)
+    ax.set_title("每位顧客營收比較", fontsize=14, fontweight="bold", pad=20)
 
     ax.xaxis.set_major_formatter(FuncFormatter(lambda x, p: f"${x:,.0f}"))
     for container in ax.containers:
@@ -246,11 +246,12 @@ def profits_by_cycle_plot(fig, begin: int, end: int) -> None:
         linewidth=2,
     )
 
-    ax.set_xlabel("Cycle", fontsize=12, fontweight="bold")
-    ax.set_ylabel("Profit", fontsize=12, fontweight="bold")
-    ax.set_title("Profit", fontsize=14, fontweight="bold", pad=20)
+    ax.set_xlabel("期數", fontsize=12, fontweight="bold")
+    ax.set_ylabel("利潤", fontsize=12, fontweight="bold")
+    ax.set_title("每期利潤", fontsize=14, fontweight="bold", pad=20)
 
     ax.yaxis.set_major_formatter(FuncFormatter(lambda x, p: f"${x:,.0f}"))
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
 
     # Remove top and right spines for cleaner look
     sns.despine(left=False, bottom=False)
@@ -279,9 +280,9 @@ def orders_by_product_and_cycle_plot(fig, begin: int, end: int) -> None:
         width=0.7,
     )
 
-    ax.set_xlabel("Cycle", fontsize=12, fontweight="bold")
-    ax.set_ylabel("Quantity", fontsize=12, fontweight="bold")
-    ax.set_title("Customer Orders by Product", fontsize=14, fontweight="bold", pad=20)
+    ax.set_xlabel("期數", fontsize=12, fontweight="bold")
+    ax.set_ylabel("數量", fontsize=12, fontweight="bold")
+    ax.set_title("顧客訂單及產品分析", fontsize=14, fontweight="bold", pad=20)
 
     ax.yaxis.set_major_formatter(FuncFormatter(lambda x, p: f"{x:,.0f}"))
 
@@ -289,7 +290,7 @@ def orders_by_product_and_cycle_plot(fig, begin: int, end: int) -> None:
     ax.set_xticklabels(ax.get_xticklabels(), rotation=0)
 
     ax.legend(
-        title="Product",
+        title="產品清單",
         title_fontsize=10,
         fontsize=9,
         loc="upper left",

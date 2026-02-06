@@ -18,12 +18,12 @@ def ui_update_order(
 ) -> None:
     try:
         if not is_valid_number(quantity):
-            ui.notify("Quantity has to be positive", type="negative")
+            ui.notify("數量必須為正數", type="negative")
             return
         update_customer_order(cycle_id, customer_id, product_id, quantity)
-        ui.notify("Successful!", type="positive")
+        ui.notify("儲存成功", type="positive")
     except Exception as e:
-        ui.notify(f"Failed because of {e}", type="negative")
+        ui.notify(f"失敗({e})，請確認商品價錢已更新再下訂單", type="negative")
 
 
 # dynamically create a card for each customer
@@ -50,7 +50,7 @@ def create_customer_cards():
                                 else 0,
                             )
                             ui.button(
-                                "Save",
+                                "儲存訂單",
                                 on_click=lambda _, cust=customer, prod=product, qty=quantity: (
                                     ui_update_order(
                                         get_current_cycle_id(),
@@ -61,7 +61,7 @@ def create_customer_cards():
                                 ),
                             ).props("outline color=primary")
                     ui.label(
-                        f"Total: {calculate_total_price_by_customer(get_current_cycle_id(), customer, order_quantities)}"
+                        f"訂單總額：${calculate_total_price_by_customer(get_current_cycle_id(), customer, order_quantities)}"
                     )
 
 
@@ -72,9 +72,9 @@ def content():
         create_cycle_navigation_buttons()
 
         with ui.column().classes("flex-1 max-w-4xl gap-6"):
-            create_header("Customer Management")
+            create_header("顧客訂單管理")
 
             # Customer table section
-            ui.label("Customers").classes("text-h6 font-medium text-gray-700 q-mt-md")
+            ui.label("顧客總覽").classes("text-h6 font-medium text-gray-700 q-mt-md")
 
             create_customer_cards()

@@ -13,30 +13,28 @@ from ui.components.cycle_components import (
 
 def update_price_dialog(product_name):
     with ui.dialog() as dialog, ui.card():
-        ui.label("Update price").classes("text-h6")
-        price_input = ui.number(label="New Price", value=0, min=0, step=0.01)
+        ui.label("更新價格").classes("text-h6")
+        price_input = ui.number(label="請填入新價格", value=0, min=0, step=0.01)
 
         def update_price():
             try:
                 new_price = float(price_input.value)
                 if not is_valid_number(new_price):
-                    ui.notify(
-                        "Price has to be positive. Please try again.", type="negative"
-                    )
+                    ui.notify("價格不得為負數", type="negative")
                 update_product_price(
                     cycle_id=get_current_cycle_id(),
                     product_name=product_name,
                     new_price=new_price,
                 )
-                ui.notify(f"Price updated successfully to {new_price}", type="positive")
+                ui.notify(f"價格成功更新至${new_price}", type="positive")
                 product_price_table.refresh()
                 dialog.close()
             except Exception as e:
-                ui.notify(f"Error updating price: {e}", type="negative")
+                ui.notify(f"錯誤: {e}", type="negative")
 
         with ui.row().classes("gap-2 q-mt-md"):
-            ui.button("Cancel", on_click=dialog.close).props("flat")
-            ui.button("Update", on_click=update_price).props("color=primary")
+            ui.button("取消", on_click=dialog.close).props("flat")
+            ui.button("確認更新", on_click=update_price).props("color=primary")
 
     dialog.open()
 
@@ -45,10 +43,10 @@ def update_price_dialog(product_name):
 def product_price_table():
     # table definition
     columns = [
-        {"name": "product_id", "label": "ID", "field": "product_id"},
-        {"name": "product", "label": "Product", "field": "product"},
-        {"name": "price", "label": "Price", "field": "price"},
-        {"name": "update", "label": "Update", "align": "center"},
+        {"name": "product_id", "label": "商品代號", "field": "product_id"},
+        {"name": "product", "label": "商品名稱", "field": "product"},
+        {"name": "price", "label": "價格", "field": "price"},
+        {"name": "update", "label": "更新價格", "align": "center"},
     ]
 
     product_prices = get_product_prices(
@@ -69,7 +67,7 @@ def product_price_table():
     # table buttons definition
     with table.add_slot("body-cell-update"):
         with table.cell("update"):
-            ui.button("update").props("flat color=primary").on(
+            ui.button("更新").props("flat color=primary").on(
                 "click",
                 js_handler="() => emit(props.row.product)",
                 handler=lambda e: update_price_dialog(e.args),
@@ -83,12 +81,10 @@ def content():
         create_cycle_navigation_buttons()
 
         with ui.column().classes("flex-1 max-w-4xl gap-6"):
-            create_header("Product Management")
+            create_header("商品價格管理")
 
             # Product prices section
-            ui.label("Product Prices").classes(
-                "text-h6 font-medium text-gray-700 q-mt-md"
-            )
+            ui.label("價格列表").classes("text-h6 font-medium text-gray-700 q-mt-md")
 
             with ui.card().classes("w-full"):
                 product_price_table()

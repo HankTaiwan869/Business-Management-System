@@ -68,3 +68,31 @@ def calculate_total_cost(cycle_id: int) -> float:
         if cost is not None:
             total_cost += cost
     return total_cost
+
+
+def calculate_cycle_financial_metrics(cycle_id: int) -> dict[str, float]:
+    # Current cycle metrics
+    new_revenue = calculate_total_revenue(cycle_id)
+    new_cost = calculate_total_cost(cycle_id)
+    new_profit = new_revenue - new_cost
+    new_profit_margin = (new_profit / new_revenue * 100) if new_revenue != 0 else 0
+
+    # Previous cycle metrics
+    old_revenue = calculate_total_revenue(cycle_id - 1)
+    old_cost = calculate_total_cost(cycle_id - 1)
+    old_profit = old_revenue - old_cost
+
+    # Calculate growth (None if first cycle)
+    growth = ((new_profit - old_profit) / old_profit * 100) if old_profit != 0 else 0
+
+    return {
+        "cycle_id": cycle_id,
+        "revenue": new_revenue,
+        "cost": new_cost,
+        "profit": new_profit,
+        "profit_margin": new_profit_margin,
+        "previous_revenue": old_revenue,
+        "previous_cost": old_cost,
+        "previous_profit": old_profit,
+        "growth": growth,
+    }

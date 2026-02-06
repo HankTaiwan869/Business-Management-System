@@ -32,12 +32,12 @@ def ui_update_supply_order(
 ) -> None:
     try:
         if not is_valid_number(quantity) or not is_valid_number(price):
-            ui.notify("Quantity/Price have to be positive.", type="negative")
+            ui.notify("數量/價格須為正數", type="negative")
             return
         update_supplier_order(cycle_id, supplier_id, product_id, quantity, price)
-        ui.notify("Successful!", type="positive")
+        ui.notify("儲存成功", type="positive")
     except Exception:
-        ui.notify(f"Failed because of {Exception}", type="negative")
+        ui.notify(f"失敗({Exception})", type="negative")
 
 
 # dynamically create supplier order cards
@@ -57,21 +57,21 @@ def create_supplier_cards():
                             ui.label(product.name).classes("text-subtitle2 font-medium")
                             with ui.row().classes("gap-2"):
                                 quantity = ui.number(
-                                    "Quantity",
+                                    "叫貨數量",
                                     min=0.0,
                                     value=orders[(supplier.id, product.id)].quantity
                                     if (supplier.id, product.id) in orders
                                     else 0,
                                 ).classes("flex-1")
                                 price = ui.number(
-                                    "Price",
+                                    "價錢",
                                     min=0.0,
                                     value=orders[(supplier.id, product.id)].price
                                     if (supplier.id, product.id) in orders
                                     else 0,
                                 ).classes("flex-1")
                             ui.button(
-                                "Save",
+                                "儲存",
                                 on_click=lambda _, sup=supplier, prod=product, qty=quantity, pri=price: (
                                     ui_update_supply_order(
                                         get_current_cycle_id(),
@@ -83,16 +83,16 @@ def create_supplier_cards():
                                 ),
                             ).props("outline color=primary").classes("self-end")
                 ui.separator()
-                ui.label(f"Total: ${calculate_total_price(supplier.id):.2f}").classes(
-                    "text-subtitle1 font-bold"
-                )
+                ui.label(
+                    f"叫貨訂單總額：${calculate_total_price(supplier.id):.2f}"
+                ).classes("text-subtitle1 font-bold")
 
 
 def create_product_demand_cards():
     products = get_products()
 
     with ui.column().classes("gap-3"):
-        ui.label("Product Demand Summary").classes("text-h6 font-medium text-gray-700")
+        ui.label("產品需求列表").classes("text-h6 font-medium text-gray-700")
         for product in products:
             total_customer_order = calculate_total_customer_order_quantity_by_product(
                 get_current_cycle_id(), product.id
@@ -105,11 +105,13 @@ def create_product_demand_cards():
             with ui.row().classes("items-center gap-2"):
                 ui.label(f"{product.name}:").classes("text-body1 font-medium min-w-32")
                 if remaining > 0:
-                    ui.label(f"Need {remaining} more").classes(
+                    ui.label(f"目前尚須{remaining}").classes(
                         "text-body2 text-orange-600"
                     )
+                elif remaining == 0:
+                    ui.label("數量剛好！").classes("text-body2 text-green-600")
                 else:
-                    ui.label(f"Surplus of {abs(remaining)}").classes(
+                    ui.label(f"目前多訂{abs(remaining)}").classes(
                         "text-body2 text-blue-600"
                     )
 
@@ -122,10 +124,10 @@ def content():
 
         # Main content area
         with ui.column().classes("flex-1 max-w-4xl gap-6"):
-            create_header("Supplier Management")
+            create_header("上游叫貨管理")
 
             # Supply table section
-            ui.label("Suppliers").classes("text-h6 font-medium text-gray-700 q-mt-md")
+            ui.label("上游總覽").classes("text-h6 font-medium text-gray-700 q-mt-md")
 
             create_supplier_cards()
 

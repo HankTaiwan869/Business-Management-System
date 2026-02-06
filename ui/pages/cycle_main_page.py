@@ -6,24 +6,24 @@ from logic.logic import calculate_total_revenue, calculate_total_cost
 
 def show_finish_cycle_dialog():
     with ui.dialog() as dialog, ui.card():
-        ui.label("Finish Cycle").classes("text-h6 font-medium mb-2")
-        ui.label("Are you sure you want to finish the current cycle?").classes("mb-4")
+        ui.label("結束本期").classes("text-h6 font-medium mb-2")
+        ui.label("確認是否結束本期？").classes("mb-4")
 
         def ui_finish_cycle():
             if finish_cycle(
                 calculate_total_revenue(get_current_cycle_id()),
                 calculate_total_cost(get_current_cycle_id()),
             ):
-                ui.notify("Success. Redirecting to the main page.", type="positive")
+                ui.notify("成功結束，回到首頁", type="positive")
                 dialog.close()
                 ui.navigate.to("/")
             else:
-                ui.notify("Failed. Something went wrong.", type="negative")
+                ui.notify("失敗，請聯繫開發者", type="negative")
                 dialog.close()
 
         with ui.row().classes("w-full gap-2 justify-center"):
-            ui.button("Cancel", on_click=dialog.close).props("flat")
-            ui.button("Finish", on_click=lambda: ui_finish_cycle()).props("color=red")
+            ui.button("取消", on_click=dialog.close).props("flat")
+            ui.button("確認結束", on_click=lambda: ui_finish_cycle()).props("color=red")
 
     dialog.open()
 
@@ -36,19 +36,17 @@ def content():
         with ui.card().classes("w-full"):
             with ui.row().classes("items-center justify-between w-full"):
                 with ui.column().classes("gap-1"):
-                    ui.label("Cycle Management").classes(
-                        "text-h4 font-bold text-primary"
-                    )
-                    ui.label(f"Cycle ID: {get_current_cycle_id()}").classes(
+                    ui.label("週期管理").classes("text-h4 font-bold text-black")
+                    ui.label(f"第{get_current_cycle_id()}期").classes(
                         "text-subtitle1 text-gray-600"
                     )
 
                 ui.button(
-                    "Back to Home", icon="home", on_click=lambda: ui.navigate.to("/")
+                    "回首頁", icon="home", on_click=lambda: ui.navigate.to("/")
                 ).props("flat color=secondary")
 
         # Navigation cards
-        ui.label("Actions").classes("text-h6 font-medium text-gray-700 q-mt-md")
+        ui.label("主選單").classes("text-h6 font-medium text-gray-700 q-mt-md")
 
         with ui.row().classes("w-full gap-4"):
             with (
@@ -57,9 +55,8 @@ def content():
                 .on("click", lambda: ui.navigate.to("/cycle/product"))
             ):
                 with ui.column().classes("items-center gap-3 p-4"):
-                    ui.icon("inventory_2", size="48px").classes("text-primary")
-                    ui.label("Product").classes("text-h6 font-medium")
-                    ui.label("Manage products").classes("text-caption text-gray-600")
+                    ui.icon("eco", size="48px").classes("text-primary")
+                    ui.label("產品價格").classes("text-h6 font-medium")
 
             with (
                 ui.card()
@@ -68,8 +65,7 @@ def content():
             ):
                 with ui.column().classes("items-center gap-3 p-4"):
                     ui.icon("person", size="48px").classes("text-green")
-                    ui.label("Customer").classes("text-h6 font-medium")
-                    ui.label("Manage customers").classes("text-caption text-gray-600")
+                    ui.label("顧客訂單").classes("text-h6 font-medium")
 
             with (
                 ui.card()
@@ -78,8 +74,7 @@ def content():
             ):
                 with ui.column().classes("items-center gap-3 p-4"):
                     ui.icon("local_shipping", size="48px").classes("text-orange")
-                    ui.label("Supply").classes("text-h6 font-medium")
-                    ui.label("Manage supplies").classes("text-caption text-gray-600")
+                    ui.label("上游叫貨").classes("text-h6 font-medium")
 
             with (
                 ui.card()
@@ -88,8 +83,7 @@ def content():
             ):
                 with ui.column().classes("items-center gap-3 p-4"):
                     ui.icon("assessment", size="48px").classes("text-blue")
-                    ui.label("Report").classes("text-h6 font-medium")
-                    ui.label("View reports").classes("text-caption text-gray-600")
+                    ui.label("本期報告").classes("text-h6 font-medium")
 
             with (
                 ui.card()
@@ -98,7 +92,4 @@ def content():
             ):
                 with ui.column().classes("items-center gap-3 p-4"):
                     ui.icon("check_circle", size="48px").classes("text-red")
-                    ui.label("Finish Cycle").classes("text-h6 font-medium")
-                    ui.label("Complete current cycle").classes(
-                        "text-caption text-gray-600"
-                    )
+                    ui.label("結束本期").classes("text-h6 font-medium")

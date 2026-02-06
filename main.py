@@ -1,5 +1,6 @@
 from nicegui import ui, app
 from ui.pages import cycle_router, overview, business_report
+from datetime import datetime
 
 # Development only import
 from database.db_operations import (
@@ -48,30 +49,30 @@ def home():
         # Header
         with ui.card().classes("w-full"):
             with ui.column().classes("p-4 gap-2"):
-                ui.label("Welcome to Cycle Manager").classes("text-h4 font-bold")
+                ui.label("荖葉管理中心🍃").classes("text-h4 font-bold")
 
         # Current cycle status card
-        ui.label("Current Status").classes("text-h6 font-medium text-gray-700 q-mt-md")
+        ui.label("期數資訊").classes("text-h6 font-medium text-gray-700 q-mt-md")
 
         with ui.card().classes("w-full"):
             with ui.row().classes("items-center justify-between w-full p-2"):
-                with ui.row().classes("items-center gap-2"):
-                    ui.icon("info", size="20px").classes("text-primary")
+                if current_settings.is_in_cycle:
+                    # Status badge
+                    with ui.badge(color="green").classes("text-sm px-3 py-1"):
+                        ui.label("進行中")
                     ui.label(
-                        f"Cycle ID: {current_settings.cycle_id} (starting from {get_cycle_start_date(get_current_cycle_id())})"
+                        f"現在：第{current_settings.cycle_id}期 (開始日期：{get_cycle_start_date(get_current_cycle_id())})"
                     ).classes("text-subtitle1")
-                # Status badge
-                with (
-                    ui.badge()
-                    .props(
-                        f"color={'green' if current_settings.is_in_cycle else 'gray'}"
+                else:
+                    # Status badge
+                    with ui.badge(color="gray").classes("text-sm px-3 py-1"):
+                        ui.label("休息中")
+                    ui.label(f"今日日期：{datetime.now().date()}").classes(
+                        "text-subtitle1"
                     )
-                    .classes("text-sm px-3 py-1")
-                ):
-                    ui.label("Active" if current_settings.is_in_cycle else "Inactive")
 
         # Action cards
-        ui.label("Actions").classes("text-h6 font-medium text-gray-700 q-mt-md")
+        ui.label("主選單").classes("text-h6 font-medium text-gray-700 q-mt-md")
 
         with ui.row().classes("w-full gap-4"):
             # Start new cycle card
@@ -93,10 +94,7 @@ def home():
                     "items-center justify-center gap-3 p-4 w-full h-full"
                 ):
                     ui.icon("play_circle", size="48px").classes("text-green")
-                    ui.label("Start New Cycle").classes("text-h6 font-medium")
-                    ui.label("Begin a fresh cycle").classes(
-                        "text-subtitle2 text-gray-600 text-center"
-                    )
+                    ui.label("開始新一期").classes("text-h6 font-medium")
 
             # Continue cycle card
             continue_card = ui.card().classes(
@@ -109,10 +107,7 @@ def home():
                     "items-center justify-center gap-3 p-4 w-full h-full"
                 ):
                     ui.icon("restart_alt", size="48px").classes("text-blue")
-                    ui.label("Continue Cycle").classes("text-h6 font-medium")
-                    ui.label("Resume current cycle").classes(
-                        "text-subtitle2 text-gray-600 text-center"
-                    )
+                    ui.label("繼續本期").classes("text-h6 font-medium")
 
             # Overview card
             with (
@@ -124,8 +119,8 @@ def home():
                     "items-center justify-center gap-3 p-4 w-full h-full"
                 ):
                     ui.icon("dashboard", size="48px").classes("text-purple")
-                    ui.label("Overview").classes("text-h6 font-medium")
-                    ui.label("Manage database").classes(
+                    ui.label("後臺總覽").classes("text-h6 font-medium")
+                    ui.label("顧客、商品、供應商資訊").classes(
                         "text-subtitle2 text-gray-600 text-center"
                     )
 
@@ -139,14 +134,11 @@ def home():
                     "items-center justify-center gap-3 p-4 w-full h-full"
                 ):
                     ui.icon("assessment", size="48px").classes("text-blue")
-                    ui.label("Report").classes("text-h6 font-medium")
-                    ui.label("View reports").classes(
-                        "text-subtitle2 text-gray-600 text-center"
-                    )
+                    ui.label("分析報表").classes("text-h6 font-medium")
 
         # ======== development only =========
         with (
-            ui.expansion("Developer Tools", icon="build")
+            ui.expansion("開發者工具 (勿點)", icon="build")
             .classes("w-full q-mt-lg bg-red-50")
             .props("dense")
         ):

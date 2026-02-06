@@ -16,14 +16,14 @@ router = APIRouter(prefix="/overview")
 def ui_update_customer_discount(dialog, name: str, discount: float) -> None:
     try:
         if not is_valid_number(discount):
-            ui.notify("Discount should be positive integer", type="negative")
+            ui.notify("折扣須為正數", type="negative")
             return
         update_customer_discount(name, discount)
-        ui.notify("Success!", type="positive")
+        ui.notify("更新成功！", type="positive")
         customer_table.refresh()
         dialog.close()
     except Exception as e:
-        ui.notify(f"Error: {e}", type="negative")
+        ui.notify(f"錯誤({e})", type="negative")
 
 
 def update_customer_dialogue():
@@ -35,17 +35,18 @@ def update_customer_dialogue():
 
         def show_discount(name: str) -> None:
             discount = ui.number(
-                "Enter New Discount", min=0, value=customer_discount_map[name]
+                "輸入新折扣", min=0, value=customer_discount_map[name]
             ).classes("w-full")
             ui.button(
-                "Save",
+                "儲存",
                 on_click=lambda: ui_update_customer_discount(
                     dialog, name, discount.value
                 ),
             ).classes("w-full mt-4").props("outline color=primary")
 
-        ui.label("Update Customer").classes("text-h6")
+        ui.label("更新折扣").classes("text-h6")
         ui.select(
+            label="點擊選擇一位顧客",
             options=list(customer_discount_map.keys()),
             clearable=True,
             on_change=lambda name: show_discount(name.value),
@@ -57,59 +58,57 @@ def update_customer_dialogue():
 def submit_customer(name, discount):
     try:
         if not is_valid_name(name.value):
-            ui.notify("Name cannot be empty. Please try again.", type="negative")
+            ui.notify("欄位不可空白，請再試一次", type="negative")
             return
         if not is_valid_number(discount.value):
-            ui.notify("Discount should be positive. Please try again.", type="negative")
+            ui.notify("折扣不可為負數，請再試一次", type="negative")
         add_customer(name.value.strip(), discount.value)
-        ui.notify(
-            f"Customer '{name.value.strip()}' added successfully.", type="positive"
-        )
+        ui.notify(f"顧客'{name.value.strip()}'已成功加入", type="positive")
         name.value = ""
         discount.value = 0.0
         customer_table.refresh()
     except Exception as e:
-        ui.notify(f"Error adding customer: {e}", type="negative")
+        ui.notify(f"錯誤：{e}", type="negative")
 
 
 def submit_product(product_name_input):
     try:
         if not is_valid_name(product_name_input.value):
-            ui.notify("Name cannot be empty. Please try again.", type="negative")
+            ui.notify("欄位不可空白，請再試一次", type="negative")
             return
         add_product(product_name_input.value.strip())
         ui.notify(
-            f"Product '{product_name_input.value.strip()}' added successfully.",
+            f"產品'{product_name_input.value.strip()}'已成功加入",
             type="positive",
         )
         product_name_input.value = ""
         product_table.refresh()
     except Exception as e:
-        ui.notify(f"Error adding product: {e}", type="negative")
+        ui.notify(f"錯誤：{e}", type="negative")
 
 
 def submit_supplier(supplier_name_input):
     try:
         if not is_valid_name(supplier_name_input.value):
-            ui.notify("Name cannot be empty. Please try again.", type="negative")
+            ui.notify("欄位不可空白，請再試一次", type="negative")
             return
         add_supplier(supplier_name_input.value.strip())
         ui.notify(
-            f"Supplier '{supplier_name_input.value.strip()}' added successfully.",
+            f"供應商'{supplier_name_input.value.strip()}'已成功加入",
             type="positive",
         )
         supplier_name_input.value = ""
         supplier_table.refresh()
     except Exception as e:
-        ui.notify(f"Error adding supplier: {e}", type="negative")
+        ui.notify(f"錯誤：{e}", type="negative")
 
 
 @ui.refreshable
 def customer_table():
     columns = [
-        {"name": "id", "label": "ID", "field": "id"},
-        {"name": "name", "label": "Name", "field": "name"},
-        {"discount": "discount", "label": "Discount", "field": "discount"},
+        {"name": "id", "label": "顧客編號", "field": "id"},
+        {"name": "name", "label": "名字", "field": "name"},
+        {"name": "discount", "label": "折扣(退)", "field": "discount"},
     ]
     rows = []
     for row in get_customers():
@@ -122,8 +121,8 @@ def customer_table():
 @ui.refreshable
 def product_table():
     columns = [
-        {"name": "id", "label": "ID", "field": "id"},
-        {"name": "name", "label": "Name", "field": "name"},
+        {"name": "id", "label": "產品編號", "field": "id"},
+        {"name": "name", "label": "產品名", "field": "name"},
     ]
     rows = []
     for row in get_products():
@@ -136,8 +135,8 @@ def product_table():
 @ui.refreshable
 def supplier_table():
     columns = [
-        {"name": "id", "label": "ID", "field": "id"},
-        {"name": "name", "label": "Name", "field": "name"},
+        {"name": "id", "label": "供應商編號", "field": "id"},
+        {"name": "name", "label": "供應商名", "field": "name"},
     ]
     rows = []
     for row in get_suppliers():
@@ -156,84 +155,82 @@ def overview_page():
         with ui.card().classes("w-full"):
             with ui.row().classes("items-center justify-between w-full"):
                 with ui.column().classes("gap-1"):
-                    ui.label("Database Overview").classes(
-                        "text-h4 font-bold text-primary"
-                    )
-                    ui.label("Manage customers, products, and suppliers").classes(
+                    ui.label("後臺管理").classes("text-h4 font-bold text-black")
+                    ui.label("新增顧客、產品、上游供應商").classes(
                         "text-subtitle1 text-gray-600"
                     )
 
                 ui.button(
-                    "Back to Home", icon="home", on_click=lambda: ui.navigate.to("/")
+                    "回首頁", icon="home", on_click=lambda: ui.navigate.to("/")
                 ).props("flat color=secondary")
 
         # Tabs card
         with ui.card().classes("w-full"):
             with ui.tabs().classes("w-full") as tabs:
-                ui.tab("add_customer", "Customer", icon="person")
-                ui.tab("add_product", "Product", icon="eco")
-                ui.tab("add_supplier", "Supplier", icon="local_shipping")
+                ui.tab("add_customer", "顧客", icon="person")
+                ui.tab("add_product", "產品", icon="eco")
+                ui.tab("add_supplier", "供應商", icon="local_shipping")
 
             ui.separator()
 
             with ui.tab_panels(tabs, value="add_customer").classes("w-full"):
                 with ui.tab_panel("add_customer"):
                     with ui.column().classes("gap-4 w-full p-4"):
-                        ui.label("Add New Customer").classes("text-h6 font-medium")
-                        name_input = ui.input("Customer Name").classes("w-full")
+                        ui.label("新增顧客").classes("text-h6 font-medium")
+                        name_input = ui.input("請輸入顧客名").classes("w-full")
                         discount_input = ui.number(
-                            "Discount", value=0.0, min=0.0
+                            "折扣(退)", value=0.0, min=0.0
                         ).classes("w-full")
                         with ui.row():
                             ui.button(
-                                "Add Customer",
+                                "新增顧客",
                                 icon="add",
                                 on_click=lambda: submit_customer(
                                     name_input, discount_input
                                 ),
                             ).props("outline color=primary")
                             ui.button(
-                                "Update Customer",
+                                "更新顧客折扣",
                                 icon="edit",
                                 on_click=update_customer_dialogue,
                             ).props("outline color=primary")
 
                         ui.separator().classes("q-my-md")
-                        ui.label("Current Customers").classes(
+                        ui.label("現有顧客總覽").classes(
                             "text-subtitle1 font-medium q-mb-sm"
                         )
                         customer_table()
 
                 with ui.tab_panel("add_product"):
                     with ui.column().classes("gap-4 w-full p-4"):
-                        ui.label("Add New Product").classes("text-h6 font-medium")
-                        product_name_input = ui.input("Product Name").classes("w-full")
+                        ui.label("新增產品").classes("text-h6 font-medium")
+                        product_name_input = ui.input("請輸入產品名").classes("w-full")
                         ui.button(
-                            "Add Product",
+                            "新增產品",
                             icon="add",
                             on_click=lambda: submit_product(product_name_input),
                         ).props("outline color=primary")
 
                         ui.separator().classes("q-my-md")
-                        ui.label("Current Products").classes(
+                        ui.label("現有產品總覽").classes(
                             "text-subtitle1 font-medium q-mb-sm"
                         )
                         product_table()
 
                 with ui.tab_panel("add_supplier"):
                     with ui.column().classes("gap-4 w-full p-4"):
-                        ui.label("Add New Supplier").classes("text-h6 font-medium")
-                        supplier_name_input = ui.input("Supplier Name").classes(
+                        ui.label("新增供應商").classes("text-h6 font-medium")
+                        supplier_name_input = ui.input("請輸入供應商名").classes(
                             "w-full"
                         )
                         ui.button(
-                            "Add Supplier",
+                            "新增供應商",
                             icon="add",
                             on_click=lambda: submit_supplier(supplier_name_input),
                         ).props("outline color=primary")
 
                         ui.separator().classes("q-my-md")
-                        ui.label("Current Suppliers").classes(
+                        ui.label("現有供應商總覽").classes(
                             "text-subtitle1 font-medium q-mb-sm"
                         )
                         supplier_table()
