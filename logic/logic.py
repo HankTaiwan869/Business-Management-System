@@ -1,7 +1,9 @@
 from database.models import Customer
-from database.db_operations import (
+from database.db_operations_general import (
     get_customers,
     get_products,
+)
+from database.db_operations_cycle import (
     get_product_price_by_product_id,
     get_orders_by_customer_and_product,
     get_customer_orders_by_product,

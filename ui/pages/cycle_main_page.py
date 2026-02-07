@@ -1,5 +1,5 @@
 from nicegui import ui
-from database.db_operations import finish_cycle
+from database.db_operations_general import finish_cycle
 from utils.helpers import get_current_cycle_id
 from logic.logic import calculate_total_revenue, calculate_total_cost
 

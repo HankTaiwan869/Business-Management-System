@@ -5,7 +5,7 @@ from utils.plotting_helpers import (
     profits_by_cycle_plot,
     orders_by_product_and_cycle_plot,
 )
-from database.db_operations import get_monthly_figures
+from database.db_operations_general import get_monthly_figures
 
 router = APIRouter(prefix="/report")
 

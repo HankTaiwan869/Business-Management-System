@@ -1,5 +1,5 @@
 from nicegui import ui, APIRouter
-from database.db_operations import (
+from database.db_operations_general import (
     add_customer,
     add_product,
     add_supplier,

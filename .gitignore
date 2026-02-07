@@ -9,6 +9,8 @@ data/
 # Virtual environments
 .venv
 
+# Other files
 test.py
 .env
-to do.txt
+run.bat
+

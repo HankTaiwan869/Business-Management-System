@@ -1,7 +1,7 @@
 from nicegui import ui
-from database.db_operations import (
+from database.db_operations_general import get_products
+from database.db_operations_cycle import (
     get_product_prices,
-    get_products,
     update_product_price,
 )
 from utils.helpers import get_current_cycle_id, is_valid_number

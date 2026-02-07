@@ -1,15 +1,17 @@
 import pandas as pd
 import seaborn as sns
 from matplotlib.ticker import FuncFormatter, MaxNLocator
-from database.db_operations import (
+from database.db_operations_general import (
     get_products,
     get_customers,
-    get_customer_orders_by_product,
-    get_product_price_by_product_id,
-    get_supply_orders_by_product,
     get_customer_by_id,
     get_profits_by_cycle,
     get_customer_orders_by_cycle_and_product,
+)
+from database.db_operations_cycle import (
+    get_customer_orders_by_product,
+    get_product_price_by_product_id,
+    get_supply_orders_by_product,
 )
 import matplotlib.pyplot as plt
 

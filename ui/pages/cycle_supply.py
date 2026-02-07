@@ -1,7 +1,9 @@
 from nicegui import ui
-from database.db_operations import (
+from database.db_operations_general import (
     get_products,
     get_suppliers,
+)
+from database.db_operations_cycle import (
     get_orders_by_supplier_and_product,
     get_orders_by_suppliers,
     update_supplier_order,
@@ -28,16 +30,52 @@ def calculate_total_price(supplier_id: int) -> float:
 
 
 def ui_update_supply_order(
-    cycle_id: int, supplier_id: int, product_id: int, quantity: float, price: float
+    cycle_id: int,
+    supplier_id: int,
+    product_id: int,
+    quantity: float,
+    price: float,
+    dialog=None,
 ) -> None:
     try:
         if not is_valid_number(quantity) or not is_valid_number(price):
             ui.notify("數量/價格須為正數", type="negative")
             return
+        if product_id is None:
+            ui.notify("未選擇商品", type="negative")
+            return
         update_supplier_order(cycle_id, supplier_id, product_id, quantity, price)
         ui.notify("儲存成功", type="positive")
+        if dialog is not None:
+            dialog.close()
     except Exception:
         ui.notify(f"失敗({Exception})", type="negative")
+
+
+def add_supply_order_dialog(
+    cycle_id: int, supplier_id: int, supplier_name: str
+) -> None:
+    products = get_products()
+    products_dict = {product.name: product.id for product in products}
+    with ui.dialog() as dialog, ui.card():
+        ui.label(f"新增訂單：{supplier_name}")
+        update_prod = ui.select(
+            options=list(products_dict.keys()), label="選擇一項商品"
+        ).classes("w-full")
+        update_quan = ui.number(label="輸入訂單數量", value=0, min=0, step=1)
+        update_price = ui.number(label="輸入訂單價格", value=0, min=0)
+        ui.button(
+            "確認新增",
+            on_click=lambda: ui_update_supply_order(
+                cycle_id,
+                supplier_id,
+                products_dict.get(update_prod.value),
+                update_quan.value,
+                update_price.value,
+                dialog,
+            ),
+        )
+    dialog.open()
 
 
 # dynamically create supplier order cards
@@ -50,9 +88,18 @@ def create_supplier_cards():
     with ui.grid(columns=3):
         for supplier in suppliers:
             with ui.card():
-                ui.label(supplier.name).classes("text-h6 font-medium")
+                with ui.row().classes("w-full"):
+                    ui.label(supplier.name).classes("text-h6 font-medium flex-1")
+                    ui.button(
+                        "新增訂單",
+                        on_click=lambda sup=supplier: add_supply_order_dialog(
+                            get_current_cycle_id(), sup.id, sup.name
+                        ),
+                    ).props("outline color=green").classes("self-end")
                 with ui.column().classes("gap-2"):
                     for product in products:
+                        if (supplier.id, product.id) not in orders:
+                            continue
                         with ui.column().classes("gap-1"):
                             ui.label(product.name).classes("text-subtitle2 font-medium")
                             with ui.row().classes("gap-2"):

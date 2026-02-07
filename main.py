@@ -3,7 +3,7 @@ from ui.pages import cycle_router, overview, business_report
 from datetime import datetime
 
 # Development only import
-from database.db_operations import (
+from database.db_operations_general import (
     db_reset,
     start_cycle,
     get_current_settings,
@@ -49,7 +49,7 @@ def home():
         # Header
         with ui.card().classes("w-full"):
             with ui.column().classes("p-4 gap-2"):
-                ui.label("荖葉管理中心🍃").classes("text-h4 font-bold")
+                ui.label("訂單管理系統🍃").classes("text-h4 font-bold")
 
         # Current cycle status card
         ui.label("期數資訊").classes("text-h6 font-medium text-gray-700 q-mt-md")
