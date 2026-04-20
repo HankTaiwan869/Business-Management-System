@@ -11,7 +11,11 @@ from sqlalchemy import create_engine, select, func, Row
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime, date
 from typing import Sequence, Any
+from pathlib import Path
 
+data_folder = Path(__file__).parent.parent / "data"
+if not data_folder.exists():
+    data_folder.mkdir()
 
 engine = create_engine("sqlite:///data/Business.db", echo=False)
 SessionLocal = sessionmaker(bind=engine)
